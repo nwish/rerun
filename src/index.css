@@ -23,11 +23,11 @@
   --legend: #b6ac99;
   --dim: #9c9ea4;
 
-  /* The one action key, and the amber status readout */
+  /* The one action key, and the same accent used as text (live readings, counts, pending) */
   --action: #ff5a1f;
   --action-hover: #ff7642;
   --action-ink: #1c0d04;
-  --status: #ffb020;
+  --status: #ff7442;
   --success: #7fb069;
   --danger: #e66b60;
   --focus: #cfd3da;
@@ -60,7 +60,7 @@
   --legend: #625d55;
   --dim: #66605a;
 
-  --status: #925000;
+  --status: #b73000;
   --success: #397142;
   --danger: #b23d35;
   --focus: #2563c7;
@@ -176,7 +176,7 @@ input {
   font-family: var(--font-body);
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
-  caret-color: var(--action);
+  caret-color: var(--status);
 }
 
 input:focus {
@@ -515,7 +515,7 @@ button.link:active {
 }
 
 .nav-link.active svg {
-  color: var(--action);
+  color: var(--status);
 }
 
 .theme-picker {
@@ -934,7 +934,7 @@ button.link:active {
   font-family: var(--font-mono);
   font-size: 1.6rem;
   font-weight: 500;
-  color: var(--action);
+  color: var(--status);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -2282,7 +2282,7 @@ div.live-person {
 }
 
 .run-item.checked .run-item-check {
-  color: var(--action);
+  color: var(--status);
 }
 
 .run-item.checked .run-item-text {
@@ -2342,7 +2342,7 @@ div.live-person {
 }
 
 .icon-swatch.active {
-  color: var(--action);
+  color: var(--status);
   border-color: color-mix(in srgb, var(--action) 55%, var(--key-border));
   outline: 2px solid color-mix(in srgb, var(--action) 45%, transparent);
   outline-offset: 1px;
