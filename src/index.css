@@ -2416,6 +2416,14 @@ button.danger:hover {
   gap: 12px;
 }
 
+/* The title row wraps the live badge onto its own line on phones, so centring the icon
+   against the two-line block parks it beside the badge. Line it up with the title instead. */
+@media (max-width: 640px) {
+  .run-header-title {
+    align-items: flex-start;
+  }
+}
+
 .run-header-icon {
   width: 34px;
   height: 34px;
