@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { api, type Me, type Share } from './api'
-import Avatar from './Avatar'
+import Avatar, { initials } from './Avatar'
 import IconPicker from './IconPicker'
 import SharePanel from './SharePanel'
 import { applyTheme, applyThemeMode, getStoredTheme, getStoredThemeMode, THEMES, type ThemeId, type ThemeMode } from './theme'
@@ -69,9 +69,16 @@ export default function SettingsPage({ user, onSignOut, onProfileChange }: { use
     <div className="settings">
       <section className="card">
         <h2>Profile</h2>
-        <p className="muted">How you appear to people you share lists with. Without a name, they see your email.</p>
+        <p className="muted">How you appear to people you share lists with. Click your avatar to pick an icon for it; without a name, they see your email.</p>
         <div className="profile-edit">
-          <Avatar person={user} className="profile-avatar" />
+          <IconPicker
+            value={user.avatar}
+            onChange={(avatar) => saveProfile({ avatar })}
+            onClear={() => saveProfile({ avatar: null })}
+            clear={{ label: 'Use my initials', content: <span className="avatar-initials">{initials(user)}</span> }}
+            trigger={{ content: <Avatar person={user} className="profile-avatar" />, className: 'profile-avatar-trigger', label: 'Change avatar' }}
+            title="Choose an avatar"
+          />
           <div className="profile-fields">
             <label>
               Display name
@@ -88,15 +95,6 @@ export default function SettingsPage({ user, onSignOut, onProfileChange }: { use
                 autoComplete="name"
               />
             </label>
-            <div className="profile-avatar-row">
-              <span className="profile-avatar-label">Avatar</span>
-              <IconPicker value={user.avatar} onChange={(avatar) => saveProfile({ avatar })} />
-              {user.avatar && (
-                <button type="button" className="ghost" onClick={() => saveProfile({ avatar: null })}>
-                  Use my initials
-                </button>
-              )}
-            </div>
           </div>
         </div>
         {error && <p className="error">{error}</p>}

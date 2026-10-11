@@ -1049,6 +1049,43 @@ button.link:active {
   height: 34px;
 }
 
+/* The avatar is its own picker: one keycap you press to choose, change or clear the icon. */
+.profile-avatar-trigger {
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+}
+
+.profile-avatar-trigger:hover,
+.profile-avatar-trigger:active {
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.profile-avatar-trigger .user-avatar {
+  box-shadow: var(--shadow-key-rest);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, border-color 0.08s ease-out;
+}
+
+.profile-avatar-trigger:hover .user-avatar {
+  border-color: var(--key-border-strong);
+  box-shadow: var(--shadow-key-hover);
+  transform: translateY(-1px);
+}
+
+.profile-avatar-trigger:active .user-avatar {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-key-pressed);
+}
+
+.profile-avatar-trigger:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .profile-edit {
   display: flex;
   align-items: flex-start;
@@ -1061,21 +1098,6 @@ button.link:active {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.profile-avatar-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.profile-avatar-label {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--legend);
 }
 
 .run-presence-person {
@@ -2327,6 +2349,13 @@ div.live-person {
 .icon-swatch svg {
   width: 17px;
   height: 17px;
+}
+
+/* The "no icon" tile in an avatar picker: the initials it reverts to. */
+.icon-swatch .avatar-initials {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
 }
 
 .icon-swatch:hover {
