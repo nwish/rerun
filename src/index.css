@@ -629,10 +629,12 @@ button.link:active {
 
 .settings .card {
   max-width: none;
+  gap: 8px;
 }
 
-.settings .card h2 {
-  margin-top: 0;
+.settings .card > h2,
+.settings .card > p {
+  margin: 0;
 }
 
 .settings .theme-picker {
