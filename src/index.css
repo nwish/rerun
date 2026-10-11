@@ -561,6 +561,16 @@ button.link:active {
   width: 100%;
 }
 
+/* A route change swaps the whole view; a short fade and lift keeps it from reading as a jump cut. */
+.app-view {
+  animation: app-view-in 0.18s ease-out;
+}
+
+/* Only a drawer on phones; the desktop nav is always visible, so the scrim never shows there. */
+.nav-scrim {
+  display: none;
+}
+
 .app-topbar {
   margin-bottom: 26px;
 }
@@ -586,7 +596,8 @@ button.link:active {
   }
 
   .app-nav-top {
-    position: static;
+    position: relative;
+    z-index: 2;
     background: var(--panel);
     border-right: none;
     border-bottom: 1px solid var(--key-border);
@@ -605,6 +616,19 @@ button.link:active {
 
   .nav-links.open {
     display: flex;
+    animation: nav-links-in 0.16s ease-out;
+  }
+
+  /* The drawer opens inside the header instead of over the page, so the page dims behind it and
+     the scrim is the tap-outside-to-close target; the header keeps its own controls on top. */
+  .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: rgba(10, 11, 14, 0.7);
+    cursor: pointer;
+    animation: nav-scrim-in 0.16s ease-out;
   }
 
   /* flex: 1 keeps the user key at the bottom of short pages; on long pages it follows the content. */
@@ -616,6 +640,48 @@ button.link:active {
   .app-nav-foot {
     position: static;
     padding: 0 20px 24px;
+  }
+}
+
+@keyframes app-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nav-links-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nav-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-view,
+  .nav-links.open,
+  .nav-scrim {
+    animation: none;
   }
 }
 
