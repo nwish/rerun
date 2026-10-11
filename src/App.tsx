@@ -70,7 +70,7 @@ export default function App() {
       subtitle={titles[activePath].subtitle}
     >
       {isAdminRoute ? (
-        <AdminPage />
+        <AdminPage me={state.user} />
       ) : isChecklistsRoute ? (
         <ChecklistsPage navigate={navigate} />
       ) : isHistoryRoute ? (

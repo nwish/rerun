@@ -89,6 +89,24 @@ export function notifyOwner(ownerId: number) {
   }
 }
 
+/**
+ * Closes a deleted user's sockets and re-checks the runs they were in, so the remaining
+ * participants see the presence change. Call after the account row is gone.
+ */
+export function dropUser(userId: number) {
+  const lists = new Set<number>()
+  for (const c of clients) {
+    if (c.userId !== userId) continue
+    for (const listId of c.lists) lists.add(listId)
+    c.lists.clear()
+    if (c.ws.readyState === c.ws.OPEN) c.ws.close(1008, 'account deleted')
+  }
+  for (const listId of lists) {
+    notifyList(listId) // anyone whose access died with the account gets 'left'
+    broadcastPresence(listId) // the roster changed even where nobody's access did
+  }
+}
+
 function originAllowed(origin: string | undefined, host: string | undefined): boolean {
   if (!origin) return true // non-browser clients; they can't ride a victim's cookies
   try {

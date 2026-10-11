@@ -3,9 +3,10 @@ export type Role = 'admin' | 'user'
 /** Someone as other people see them: their email, plus a name and avatar icon if they set them. */
 export type Person = { email: string; name: string | null; avatar: string | null }
 
-export type Me = Person & { role: Role }
+export type Me = Person & { id: number; role: Role }
 
 export type AdminUser = {
+  id: number
   email: string
   name: string | null
   avatar: string | null
@@ -14,6 +15,23 @@ export type AdminUser = {
   invited_at: number | null
   activated_at: number | null
   created_at: string
+}
+
+/** What an account's deletion would take with it; every count is what the cascade removes. */
+export type UserBlastRadius = {
+  user: { id: number; email: string; role: Role; activated: boolean }
+  blast: {
+    lists: number
+    items: number
+    runs: number
+    /** Runs they finished on other people's lists: kept, but no longer attributed to anyone. */
+    unattributedRuns: number
+    sharePartners: number
+    sharesHeld: number
+    liveRuns: number
+    personalChecks: number
+    sessions: number
+  }
 }
 
 export type ChecklistItem = { id: number; text: string; checked: boolean; position: number }
@@ -131,6 +149,8 @@ export const api = {
   activate: (token: string, password: string) => request<Me>('/api/auth/activate', json('POST', '/api/auth/activate', { token, password })),
   invite: (email: string) => request<{ email: string; resent: boolean; mail: string }>('/api/admin/invites', json('POST', '/api/admin/invites', { email })),
   users: () => request<{ users: AdminUser[] }>('/api/admin/users'),
+  userBlast: (id: number) => request<UserBlastRadius>(`/api/admin/users/${id}/blast`),
+  deleteUser: (id: number) => request<{ ok: boolean; email: string }>(`/api/admin/users/${id}`, { method: 'DELETE' }),
   authConfig: () => request<{ canRegister: boolean; firstAccount: boolean }>('/api/auth/config'),
   adminSettings: () => request<{ registrationOpen: boolean }>('/api/admin/settings'),
   setRegistrationOpen: (registrationOpen: boolean) =>
