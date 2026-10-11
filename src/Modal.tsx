@@ -5,37 +5,46 @@ export const FOCUSABLE = 'a[href], button:not(:disabled), input:not(:disabled), 
 
 /**
  * A centered dialog over a dimmed backdrop. Escape, the close button and a backdrop click all
- * call onClose; focus moves to the close button on open and returns to the opener on close
- * (`returnFocus` overrides the opener, for browsers that don't focus a button on click).
+ * call onClose; focus moves to `initialFocus` (the close button by default) on open and returns to
+ * the opener on close (`returnFocus` overrides the opener, for browsers that don't focus a button
+ * on click).
  */
 export default function Modal({
   title,
   onClose,
   className,
   returnFocus,
+  initialFocus,
   children
 }: {
   title: string
   onClose: () => void
   className?: string
   returnFocus?: RefObject<HTMLElement>
+  /** Element to focus on open instead of the close button — the first field of a form dialog. */
+  initialFocus?: RefObject<HTMLElement>
   children: ReactNode
 }) {
   const titleId = useId()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
   // Read through a ref so a parent re-render with a new callback doesn't re-run the focus effect.
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
 
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null
-    closeButtonRef.current?.focus()
+    ;(initialFocus?.current ?? closeButtonRef.current)?.focus()
     // The page behind must not scroll while the dialog is open.
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
     function onKey(e: KeyboardEvent) {
+      // Only the topmost dialog answers the keyboard: a dialog opened on top of this one (the icon
+      // picker) owns Escape and Tab, so one Escape closes one dialog.
+      const backdrops = document.querySelectorAll('.modal-backdrop')
+      if (backdrops[backdrops.length - 1] !== backdropRef.current) return
       if (e.key === 'Escape') {
         onCloseRef.current()
         return
@@ -71,7 +80,7 @@ export default function Modal({
     // Portaled to <body>: a modal opened from inside a <label> would otherwise have taps on any
     // non-button part of it (backdrop, padding, title) forwarded to the label's first control —
     // the trigger — which reopened the modal right after it closed.
-    <div className="modal-backdrop" onClick={onClose}>
+    <div ref={backdropRef} className="modal-backdrop" onClick={onClose}>
       <div ref={dialogRef} className={`modal${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 id={titleId}>{title}</h2>

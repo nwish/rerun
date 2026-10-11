@@ -1130,21 +1130,15 @@ button.link:active {
 
 /* ---- Checklists: manage (customize) ---- */
 
-.checklist-new-card {
-  max-width: none;
-  gap: 8px;
-}
-
-.checklist-new-card > h2,
-.checklist-new-card > p {
-  margin: 0;
+.checklist-new-modal {
+  max-width: 520px;
 }
 
 .checklist-new-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 0;
+  margin-top: 12px;
 }
 
 .checklist-new-fields {
