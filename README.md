@@ -60,9 +60,6 @@ Compliments of Claude, ChatGPT/Codex, Qwen3.8-Flash-Next, and a touch.. and I do
 services:
   rerun:
     image: ghcr.io/nwish/rerun:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
     ports:
       - "3001:3001"
     volumes:
