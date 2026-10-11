@@ -10,11 +10,11 @@ colors:
   key-border-strong: "#4c4f57"
   ink: "#eae6dc"
   legend: "#b6ac99"
-  dim: "#919398"
+  dim: "#9c9ea4"
   action: "#ff5a1f"
   action-hover: "#ff7642"
   action-ink: "#1c0d04"
-  status: "#ffb020"
+  status: "#ff7442"
   success: "#7fb069"
   danger: "#e66b60"
   focus: "#cfd3da"
@@ -68,12 +68,12 @@ components:
 
 Rerun reads as a piece of equipment you own, not a cloud dashboard: a gunmetal desk instrument with keycap controls and exactly one confident orange key. Every clickable surface — buttons, nav items, list rows — behaves like a real key: it rests with depth, lifts under the pointer, and depresses on press. The system was chosen deliberately against the "purple gradient on dark slate" look that reads as generic AI-scaffolded software; there is no gradient anywhere in the system, on text or otherwise, and the single accent color is spent on exactly one thing per screen: the primary action.
 
-Two accent colors carry all meaning in this system, and they never trade places. Safety-orange (`--action`) means "the one thing to do here" — a primary submit button, the active nav item, the brand checkmark. Amber (`--status`) means "a live reading" — the admin status-readout digits, a pending-invite badge. A static role label, a decorative icon, or a focus ring never borrows either color; they stay in the neutral ink/legend/dim scale. Diluting either reservation is the single fastest way to make this system stop reading as an instrument and start reading as decoration.
+Two accent roles carry all meaning in this system, and they never trade places. The action color (`--action`) is the chosen accent as a *fill*: "the one thing to do here" — a primary submit button, the active nav item, the brand checkmark. The status color (`--status`) is that same accent as *paint laid on a surface* — text and glyphs — and it is reserved for "a live reading": the admin status-readout digits, a pending-invite badge, a checklist count, live presence. Its value is derived from the accent per theme and tuned per mode so it clears 4.5:1 wherever it sits; it is not a fixed hue. A static role label, a decorative icon, or a focus ring never borrows either color; they stay in the neutral ink/legend/dim scale. Diluting either reservation is the single fastest way to make this system stop reading as an instrument and start reading as decoration.
 
 **Key Characteristics:**
 - Gunmetal chassis and panel surfaces; keycap chips lift off them, never the reverse.
 - Exactly one orange action color, reserved for primary actions and the active nav state.
-- Amber reserved for live status readouts and pending states — never a generic focus or accent color.
+- The status color — the accent as text — is reserved for live readings and pending states; never a generic focus or accent color.
 - Three self-hosted type families with distinct jobs: Space Grotesk (display), IBM Plex Sans (body), IBM Plex Mono (labels, legends, data, emails).
 - Every interactive element has three real states: rest (soft offset+blur shadow), hover (lift), press (collapse + translateY). No control opts out of this to save time.
 - No gradients, no glass/blur decoration, no purple.
@@ -86,7 +86,7 @@ The palette is a dark gunmetal chassis with warm bone-colored ink and two discip
 - **Action Orange** (`#ff5a1f`): the one confident accent. Primary buttons, the active/selected nav item's ring and icon, the brand checkmark. Never used for a static label, a badge, or an illustration.
 
 ### Secondary
-- **Status Amber** (`#ffb020`): live readings only. The admin status-readout digits, pending-invite badges and avatars. Never used as a generic focus color or a decorative accent.
+- **Status** (theme-derived: `#ff7442` dark / `#b73000` light for the default orange accent): live readings only. The admin status-readout digits, pending-invite badges and avatars, checklist counts, live presence. Never a generic focus color or a decorative accent. Every theme carries a dark and a light variant derived from its own accent, tuned to hold ≥4.5:1 on every surface of that mode.
 
 ### Neutral
 - **Chassis** (`#1a1b1e`): page background.
@@ -95,7 +95,7 @@ The palette is a dark gunmetal chassis with warm bone-colored ink and two discip
 - **Key Border** (`#3d4046`) / **Key Border Strong** (`#4c4f57`): hairline edges on keys and avatar chips.
 - **Ink** (`#eae6dc`): primary text — warm off-white, never pure white.
 - **Legend** (`#b6ac99`): secondary text and labels — the "bone/putty keycap legend" tint.
-- **Dim** (`#919398`): tertiary/muted text (tuned to hold ≥4.5:1 on panel surfaces).
+- **Dim** (`#9c9ea4`): tertiary/muted text (tuned to hold ≥4.5:1 on every surface it lands on, including `--key` and `--key-hover`; the light theme uses `#66605a` for the same reason).
 - **Danger** (`#e66b60`): error text (tuned to hold ≥4.5:1 on panel surfaces).
 - **Success** (`#7fb069`): confirmation text.
 - **Focus** (`#cfd3da`): the neutral focus-visible ring — deliberately distinct from both accents so focus never reads as "primary action" or "live status."
@@ -103,7 +103,7 @@ The palette is a dark gunmetal chassis with warm bone-colored ink and two discip
 ### Named Rules
 **The One Voice Rule.** Action Orange marks exactly one thing per screen: the primary action or the active nav item. If a second element on the same screen wants orange, it is either not actually primary, or the screen has two primaries and needs to pick one.
 
-**The Amber-Means-Live Rule.** Amber never appears on anything static. If it's not a number that changes or a state that's actually pending, it isn't amber.
+**The Status-Means-Live Rule.** The status color never appears on anything static. If it's not a number that changes or a state that's actually pending, it isn't status-colored.
 
 ## Typography
 
@@ -170,11 +170,11 @@ Corners are barely rounded (6/10/14px) — keycaps have a slight bevel, not a so
 - **Mobile:** the sidebar becomes a horizontal wrapping bar below 860px; nav items keep their full key treatment.
 
 ### Status Readout (signature component)
-One continuous panel divided into hairline-separated segments (not repeated hero-metric cards) — each segment an amber (`--status`) tabular-mono number over a small uppercase mono label. Reads as a single instrument's multi-digit display, not three identical dashboard widgets. Stacks vertically below 640px.
+One continuous panel divided into hairline-separated segments (not repeated hero-metric cards) — each segment a status-colored (`--status`) tabular-mono number over a small uppercase mono label. Reads as a single instrument's multi-digit display, not three identical dashboard widgets. Stacks vertically below 640px.
 
 ### User / List Rows
 - **Style:** each row is a quiet keycap (`--key` background, rest shadow only — no hover/press, since rows aren't currently clickable as a whole) holding a rounded-square mono-initials avatar, stacked email/date in `--legend`/`--dim`, and a role or status badge.
-- **Pending state:** dashed amber avatar border + amber "PENDING" badge + a secondary "Resend" key.
+- **Pending state:** dashed status-colored avatar border + status-colored "PENDING" badge + a secondary "Resend" key.
 
 ## Do's and Don'ts
 
@@ -191,4 +191,4 @@ One continuous panel divided into hairline-separated segments (not repeated hero
 - **Don't** use purple/violet anywhere; it was the explicit thing being replaced.
 - **Don't** render three same-size metric cards (icon + big number + label) side by side — use one continuous status-readout strip instead.
 - **Don't** use a colored border-left/border-right stripe above 1px on any card, row, or callout.
-- **Don't** let the amber status color leak onto a generic focus ring, a static badge, or a decorative icon — use `--focus` (#cfd3da) for focus and `--legend` for decoration.
+- **Don't** let the status color leak onto a generic focus ring, a static badge, or a decorative icon — use `--focus` (#cfd3da) for focus and `--legend` for decoration.

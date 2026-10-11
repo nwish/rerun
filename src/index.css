@@ -21,13 +21,13 @@
   /* Ink: warm off-white body text, bone/putty legend tint for secondary */
   --ink: #eae6dc;
   --legend: #b6ac99;
-  --dim: #919398;
+  --dim: #9c9ea4;
 
-  /* The one action key, and the amber status readout */
+  /* The one action key, and the same accent used as text (live readings, counts, pending) */
   --action: #ff5a1f;
   --action-hover: #ff7642;
   --action-ink: #1c0d04;
-  --status: #ffb020;
+  --status: #ff7442;
   --success: #7fb069;
   --danger: #e66b60;
   --focus: #cfd3da;
@@ -58,9 +58,9 @@
 
   --ink: #201f1c;
   --legend: #625d55;
-  --dim: #777169;
+  --dim: #66605a;
 
-  --status: #a85c00;
+  --status: #b73000;
   --success: #397142;
   --danger: #b23d35;
   --focus: #2563c7;
@@ -176,7 +176,7 @@ input {
   font-family: var(--font-body);
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
-  caret-color: var(--action);
+  caret-color: var(--status);
 }
 
 input:focus {
@@ -353,6 +353,44 @@ button.link:active {
   font-size: 0.74rem;
 }
 
+.nav-user-card {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.nav-user {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-signout {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--key);
+  border: 1px solid var(--key-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-key-rest);
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.nav-signout svg {
+  width: 15px;
+  height: 15px;
+}
+
+.nav-signout:hover {
+  background: var(--key-hover);
+  color: var(--ink);
+}
+
 .nav-top-row {
   display: flex;
   align-items: center;
@@ -477,7 +515,7 @@ button.link:active {
 }
 
 .nav-link.active svg {
-  color: var(--action);
+  color: var(--status);
 }
 
 .theme-picker {
@@ -523,6 +561,16 @@ button.link:active {
   width: 100%;
 }
 
+/* A route change swaps the whole view; a short fade and lift keeps it from reading as a jump cut. */
+.app-view {
+  animation: app-view-in 0.18s ease-out;
+}
+
+/* Only a drawer on phones; the desktop nav is always visible, so the scrim never shows there. */
+.nav-scrim {
+  display: none;
+}
+
 .app-topbar {
   margin-bottom: 26px;
 }
@@ -548,7 +596,8 @@ button.link:active {
   }
 
   .app-nav-top {
-    position: static;
+    position: relative;
+    z-index: 2;
     background: var(--panel);
     border-right: none;
     border-bottom: 1px solid var(--key-border);
@@ -567,6 +616,19 @@ button.link:active {
 
   .nav-links.open {
     display: flex;
+    animation: nav-links-in 0.16s ease-out;
+  }
+
+  /* The drawer opens inside the header instead of over the page, so the page dims behind it and
+     the scrim is the tap-outside-to-close target; the header keeps its own controls on top. */
+  .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: rgba(10, 11, 14, 0.7);
+    cursor: pointer;
+    animation: nav-scrim-in 0.16s ease-out;
   }
 
   /* flex: 1 keeps the user key at the bottom of short pages; on long pages it follows the content. */
@@ -581,6 +643,48 @@ button.link:active {
   }
 }
 
+@keyframes app-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nav-links-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nav-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-view,
+  .nav-links.open,
+  .nav-scrim {
+    animation: none;
+  }
+}
+
 /* ---- Settings ---- */
 
 .settings {
@@ -591,10 +695,12 @@ button.link:active {
 
 .settings .card {
   max-width: none;
+  gap: 8px;
 }
 
-.settings .card h2 {
-  margin-top: 0;
+.settings .card > h2,
+.settings .card > p {
+  margin: 0;
 }
 
 .settings .theme-picker {
@@ -673,6 +779,76 @@ button.link:active {
 
 .settings-signout:hover {
   color: var(--danger);
+}
+
+.registration-toggle {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--key-border);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.94rem;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.registration-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.registration-switch {
+  order: 1;
+  flex-shrink: 0;
+  width: 42px;
+  height: 24px;
+  padding: 3px;
+  background: var(--key-border-strong);
+  border: 1px solid var(--key-border);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: background 0.15s ease-out, border-color 0.15s ease-out;
+}
+
+.registration-switch::after {
+  content: '';
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: var(--panel);
+  border-radius: 50%;
+  box-shadow: var(--shadow-key-rest);
+  transition: transform 0.15s ease-out;
+}
+
+.registration-toggle input:checked + .registration-switch {
+  background: var(--action);
+  border-color: color-mix(in srgb, var(--action) 70%, black);
+}
+
+.registration-toggle input:checked + .registration-switch::after {
+  transform: translateX(18px);
+}
+
+.registration-toggle input:focus-visible + .registration-switch {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.registration-toggle input:disabled + .registration-switch {
+  opacity: 0.55;
+}
+
+.registration-toggle:has(input:disabled) {
+  cursor: default;
 }
 /* ---- Dashboard: the instrument panel ---- */
 
@@ -758,7 +934,7 @@ button.link:active {
   font-family: var(--font-mono);
   font-size: 1.6rem;
   font-weight: 500;
-  color: var(--action);
+  color: var(--status);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -796,15 +972,17 @@ button.link:active {
 
 .panel-grid .card {
   max-width: none;
+  gap: 8px;
 }
 
-.panel-grid .card h2 {
-  margin-top: 0;
+.panel-grid .card > h2,
+.panel-grid .card > p {
+  margin: 0;
 }
 
 .user-list {
   list-style: none;
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -871,6 +1049,43 @@ button.link:active {
   height: 34px;
 }
 
+/* The avatar is its own picker: one keycap you press to choose, change or clear the icon. */
+.profile-avatar-trigger {
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+}
+
+.profile-avatar-trigger:hover,
+.profile-avatar-trigger:active {
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.profile-avatar-trigger .user-avatar {
+  box-shadow: var(--shadow-key-rest);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, border-color 0.08s ease-out;
+}
+
+.profile-avatar-trigger:hover .user-avatar {
+  border-color: var(--key-border-strong);
+  box-shadow: var(--shadow-key-hover);
+  transform: translateY(-1px);
+}
+
+.profile-avatar-trigger:active .user-avatar {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-key-pressed);
+}
+
+.profile-avatar-trigger:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .profile-edit {
   display: flex;
   align-items: flex-start;
@@ -883,21 +1098,6 @@ button.link:active {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.profile-avatar-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.profile-avatar-label {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--legend);
 }
 
 .run-presence-person {
@@ -930,6 +1130,13 @@ button.link:active {
   text-overflow: ellipsis;
 }
 
+.user-submeta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .user-row button.ghost {
   padding: 6px 12px;
   font-size: 0.76rem;
@@ -945,15 +1152,15 @@ button.link:active {
 
 /* ---- Checklists: manage (customize) ---- */
 
-.checklist-new-card {
-  max-width: none;
+.checklist-new-modal {
+  max-width: 520px;
 }
 
 .checklist-new-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 1rem;
+  margin-top: 12px;
 }
 
 .checklist-new-fields {
@@ -1010,9 +1217,19 @@ button.link:active {
 }
 
 .checklist-card-header:hover {
-  background: var(--key-hover);
+  background: var(--action-hover);
   transform: none;
   box-shadow: none;
+}
+
+/* The row turns the action color on hover, so swap light text for the dark action ink (as on the Dashboard picker). */
+.checklist-card-header:hover,
+.checklist-card-header:hover * {
+  color: var(--action-ink);
+}
+
+.checklist-card-header:hover .checklist-card-share:hover {
+  background: color-mix(in srgb, var(--action-ink) 14%, transparent);
 }
 
 .checklist-card-toggle {
@@ -1522,9 +1739,22 @@ select:focus {
 }
 
 .history-chart {
+  position: relative;
   display: flex;
   gap: 6px;
   height: 150px;
+}
+
+/* One axis across the whole chart, at the bar baseline. A column is count (14px) + gap (4px)
+   + track + gap (4px) + week label (14px), so the track bottom sits 18px above the chart bottom.
+   Per-column borders would read as a dashed line across the 6px column gaps. */
+.history-chart::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  border-top: 1px solid var(--key-border-strong);
 }
 
 .history-chart-col {
@@ -1551,7 +1781,6 @@ select:focus {
   flex: 1;
   display: flex;
   align-items: flex-end;
-  border-bottom: 1px solid var(--key-border-strong);
 }
 
 .history-chart-bar {
@@ -1560,10 +1789,6 @@ select:focus {
   border-radius: 2px 2px 0 0;
 }
 
-.history-chart-bar.empty {
-  height: 2px !important;
-  background: var(--key-border);
-}
 
 .history-row {
   display: flex;
@@ -1730,6 +1955,39 @@ select:focus {
   color: var(--ink);
   text-align: left;
   font-weight: 600;
+}
+
+.checklist-pick-share {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.checklist-pick-share svg {
+  width: 16px;
+  height: 16px;
+}
+
+.checklist-pick-share span {
+  color: var(--status);
+}
+
+/* Hover/tap turns the card the action color (global button:hover), so swap light text for the dark action ink. */
+.checklist-pick-card:hover,
+.checklist-pick-card:active,
+.checklist-pick-card:hover *,
+.checklist-pick-card:active * {
+  color: var(--action-ink);
+}
+
+.checklist-pick-card:hover .run-invite-tag,
+.checklist-pick-card:active .run-invite-tag {
+  border-color: color-mix(in srgb, var(--action-ink) 45%, transparent);
 }
 
 .run-checklist {
@@ -1985,6 +2243,19 @@ div.live-person {
   height: 15px;
 }
 
+/* Three ghost buttons on one row crowd the right edge on phones; give the row the full
+   width and let the buttons wrap into equal, full-width tracks. */
+@media (max-width: 640px) {
+  .run-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .run-header-actions button.ghost {
+    flex: 1 1 10rem;
+  }
+}
+
 .run-item-list {
   list-style: none;
   margin: 0;
@@ -2033,7 +2304,7 @@ div.live-person {
 }
 
 .run-item.checked .run-item-check {
-  color: var(--action);
+  color: var(--status);
 }
 
 .run-item.checked .run-item-text {
@@ -2080,6 +2351,13 @@ div.live-person {
   height: 17px;
 }
 
+/* The "no icon" tile in an avatar picker: the initials it reverts to. */
+.icon-swatch .avatar-initials {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
 .icon-swatch:hover {
   background: var(--key-hover);
   color: var(--ink);
@@ -2093,7 +2371,7 @@ div.live-person {
 }
 
 .icon-swatch.active {
-  color: var(--action);
+  color: var(--status);
   border-color: color-mix(in srgb, var(--action) 55%, var(--key-border));
   outline: 2px solid color-mix(in srgb, var(--action) 45%, transparent);
   outline-offset: 1px;
@@ -2202,6 +2480,23 @@ div.live-person {
   box-shadow: var(--shadow-key-pressed);
 }
 
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+button.danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--key-border));
+}
+
+button.danger:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
 .checklist-card-icon {
   flex-shrink: 0;
   display: flex;
@@ -2223,9 +2518,17 @@ div.live-person {
   gap: 12px;
 }
 
+/* The title row wraps the live badge onto its own line on phones, so centring the icon
+   against the two-line block parks it beside the badge. Line it up with the title instead. */
+@media (max-width: 640px) {
+  .run-header-title {
+    align-items: flex-start;
+  }
+}
+
 .run-header-icon {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   background: var(--key);
   border: 1px solid var(--key-border);
   border-radius: var(--radius-sm);
@@ -2233,6 +2536,6 @@ div.live-person {
 }
 
 .run-header-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
 }

@@ -10,6 +10,7 @@ export default function AdminPage() {
   const [resending, setResending] = useState<string | null>(null)
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [registrationOpen, setRegistrationOpen] = useState<boolean | null>(null)
+  const [registrationSaving, setRegistrationSaving] = useState(false)
   const [settingError, setSettingError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -22,14 +23,17 @@ export default function AdminPage() {
     setUsers(r.users)
   }
 
-  async function toggleRegistration() {
-    if (registrationOpen === null) return
+  async function setRegistration(next: boolean) {
+    if (registrationOpen === null || registrationSaving) return
+    setRegistrationSaving(true)
     setSettingError(null)
     try {
-      const s = await api.setRegistrationOpen(!registrationOpen)
+      const s = await api.setRegistrationOpen(next)
       setRegistrationOpen(s.registrationOpen)
     } catch (err) {
       setSettingError((err as Error).message)
+    } finally {
+      setRegistrationSaving(false)
     }
   }
 
@@ -104,14 +108,23 @@ export default function AdminPage() {
           <section className="card">
             <h2>Registration</h2>
             <p className="muted">
-              {registrationOpen
-                ? 'Open: anyone who can reach this page can create an account without an invitation. New accounts get the user role.'
-                : 'Closed: new people join only by invitation.'}
+              {registrationOpen === null
+                ? 'Loading…'
+                : registrationOpen
+                  ? 'Open: anyone who can reach this page can create an account without an invitation. New accounts get the user role.'
+                  : 'Closed: new people join only by invitation.'}
             </p>
             {settingError && <p className="error">{settingError}</p>}
-            <button type="button" className="ghost" onClick={toggleRegistration} disabled={registrationOpen === null}>
-              {registrationOpen ? 'Close registration' : 'Open registration'}
-            </button>
+            <label className="registration-toggle">
+              <input
+                type="checkbox"
+                checked={registrationOpen ?? false}
+                disabled={registrationOpen === null || registrationSaving}
+                onChange={(e) => setRegistration(e.target.checked)}
+              />
+              <span className="registration-switch" aria-hidden="true" />
+              <span>Open registration</span>
+            </label>
           </section>
         </div>
 
@@ -126,9 +139,8 @@ export default function AdminPage() {
                   <Avatar person={u} />
                   <div className="user-meta">
                     <span className="user-email">{personName(u)}</span>
-                    <span className="muted">
-                      {u.name ? `${u.email} · ` : ''}Joined {u.activated_at ? new Date(u.activated_at).toLocaleDateString() : u.created_at.slice(0, 10)}
-                    </span>
+                    {u.name && <span className="user-submeta" title={u.email}>{u.email}</span>}
+                    <span className="muted user-submeta">Joined {u.activated_at ? new Date(u.activated_at).toLocaleDateString() : u.created_at.slice(0, 10)}</span>
                   </div>
                   <span className={u.role === 'admin' ? 'badge badge-admin' : 'badge'}>{u.role}</span>
                 </li>

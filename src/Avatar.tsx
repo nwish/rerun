@@ -11,7 +11,7 @@ export function ownerLabel(list: { ownerEmail: string; ownerName: string | null 
   return list.ownerName ?? list.ownerEmail
 }
 
-function initials(person: Person): string {
+export function initials(person: Person): string {
   const words = (person.name ?? '').split(' ').filter(Boolean)
   if (words.length >= 2) return `${[...words[0]][0]}${[...words[1]][0]}`.toUpperCase()
   return [...personName(person)].slice(0, 2).join('').toUpperCase()

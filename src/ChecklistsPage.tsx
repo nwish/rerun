@@ -49,7 +49,10 @@ export default function ChecklistsPage({ navigate }: { navigate: (to: string) =>
   const [newTitle, setNewTitle] = useState('')
   const [newIcon, setNewIcon] = useState(DEFAULT_CHECKLIST_ICON)
   const [creating, setCreating] = useState(false)
+  const [creatingOpen, setCreatingOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const newTitleRef = useRef<HTMLInputElement>(null)
+  const newButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     refresh()
@@ -59,6 +62,17 @@ export default function ChecklistsPage({ navigate }: { navigate: (to: string) =>
     const [lists, granted] = await Promise.all([api.checklists(), api.shares()])
     setChecklists(lists.checklists)
     setShares(granted.shares)
+  }
+
+  function openCreate() {
+    setError(null)
+    setCreatingOpen(true)
+  }
+
+  function closeCreate() {
+    if (creating) return
+    setCreatingOpen(false)
+    setError(null)
   }
 
   async function createChecklist(e: React.FormEvent) {
@@ -71,6 +85,7 @@ export default function ChecklistsPage({ navigate }: { navigate: (to: string) =>
       const created = await api.createChecklist(title, newIcon)
       setNewTitle('')
       setNewIcon(DEFAULT_CHECKLIST_ICON)
+      setCreatingOpen(false)
       await refresh()
       setExpandedId(created.id)
     } catch (err) {
@@ -92,29 +107,14 @@ export default function ChecklistsPage({ navigate }: { navigate: (to: string) =>
 
   return (
     <>
-      <section className="card checklist-new-card">
-        <h2>New checklist</h2>
-        <p className="muted">Give it a name, then add the items you check every time.</p>
-        <form onSubmit={createChecklist} className="checklist-new-form">
-          <div className="checklist-new-fields">
-            <label className="checklist-new-title">
-              Title
-              <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Kayaking trip" required maxLength={200} />
-            </label>
-            <label className="checklist-new-icon">
-              Icon
-              <IconPicker value={newIcon} onChange={setNewIcon} />
-            </label>
-            <button type="submit" disabled={creating} className="checklist-new-submit">{creating ? 'Creating…' : 'Create checklist'}</button>
-          </div>
-          {error && <p className="error">{error}</p>}
-        </form>
-      </section>
+      <button ref={newButtonRef} type="button" onClick={openCreate}>
+        New checklist
+      </button>
 
       {checklists === null ? (
         <p className="muted checklist-section-gap">Loading…</p>
       ) : checklists.length === 0 ? (
-        <p className="muted checklist-section-gap">No checklists yet — create your first one above.</p>
+        <p className="muted checklist-section-gap">No checklists yet — use “New checklist” to make your first one.</p>
       ) : (
         <>
           {renderGroup(checklists.filter((c) => c.access === 'owner'), null)}
@@ -124,6 +124,30 @@ export default function ChecklistsPage({ navigate }: { navigate: (to: string) =>
               'Shared with you'
             )}
         </>
+      )}
+
+      {creatingOpen && (
+        <Modal title="New checklist" className="checklist-new-modal" initialFocus={newTitleRef} returnFocus={newButtonRef} onClose={closeCreate}>
+          <p className="muted">Give it a name, then add the items you check every time.</p>
+          <form onSubmit={createChecklist} className="checklist-new-form">
+            <div className="checklist-new-fields">
+              <label className="checklist-new-title">
+                Title
+                <input ref={newTitleRef} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Kayaking trip" required maxLength={200} />
+              </label>
+              <label className="checklist-new-icon">
+                Icon
+                <IconPicker value={newIcon} onChange={setNewIcon} />
+              </label>
+              <button type="submit" disabled={creating} className="checklist-new-submit">{creating ? 'Creating…' : 'Create checklist'}</button>
+            </div>
+            {error && (
+              <p className="error" role="alert">
+                {error}
+              </p>
+            )}
+          </form>
+        </Modal>
       )}
     </>
   )
@@ -217,6 +241,9 @@ function ChecklistCard({
     }
   }, [draggingId])
   const [sharing, setSharing] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     setTitleDraft(summary.title)
@@ -329,8 +356,21 @@ function ChecklistCard({
   }
 
   async function removeChecklist() {
-    await api.deleteChecklist(summary.id)
-    onDeleted(summary.id)
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await api.deleteChecklist(summary.id)
+      onDeleted(summary.id)
+    } catch (err) {
+      setDeleteError((err as Error).message)
+      setDeleting(false)
+    }
+  }
+
+  function closeDeleteDialog() {
+    if (deleting) return
+    setConfirmingDelete(false)
+    setDeleteError(null)
   }
 
   async function duplicateChecklist() {
@@ -352,7 +392,7 @@ function ChecklistCard({
           <span className="checklist-card-title">{summary.title}</span>
           {!isOwner && <span className="checklist-card-meta share-owner">from {ownerLabel(summary)}</span>}
         </button>
-        <span className="checklist-card-meta">{summary.checkedCount}/{summary.itemCount}</span>
+        <span className="checklist-card-meta">{summary.itemCount}</span>
         {isOwner && (
           <button
             type="button"
@@ -447,7 +487,7 @@ function ChecklistCard({
               Duplicate
             </button>
             {isOwner && (
-              <button type="button" className="ghost checklist-delete" onClick={removeChecklist}>
+              <button type="button" className="ghost checklist-delete" onClick={() => setConfirmingDelete(true)}>
                 {icons.trash}
                 Delete checklist
               </button>
@@ -459,6 +499,28 @@ function ChecklistCard({
       {sharing && (
         <Modal title={`Share “${summary.title}”`} onClose={() => setSharing(false)} className="share-modal">
           <SharePanel checklistId={summary.id} shares={shares} onChanged={onChanged} onManageAll={onManageAll} />
+        </Modal>
+      )}
+
+      {confirmingDelete && (
+        <Modal title={`Delete “${summary.title}”?`} onClose={closeDeleteDialog}>
+          <p className="muted">
+            This permanently deletes the list{summary.itemCount > 0 ? ` and its ${summary.itemCount} ${summary.itemCount === 1 ? 'item' : 'items'}` : ''},
+            its run history, and{sharedWith > 0 ? ` its sharing with ${sharedWith} ${sharedWith === 1 ? 'person' : 'people'}` : ' any sharing'}. It can’t be undone.
+          </p>
+          {deleteError && (
+            <p className="error" role="alert">
+              {deleteError}
+            </p>
+          )}
+          <div className="modal-actions">
+            <button type="button" className="ghost" onClick={closeDeleteDialog} disabled={deleting}>
+              Cancel
+            </button>
+            <button type="button" className="ghost danger" onClick={removeChecklist} disabled={deleting}>
+              {deleting ? 'Deleting…' : 'Delete list'}
+            </button>
+          </div>
         </Modal>
       )}
     </div>
