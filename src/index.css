@@ -906,15 +906,17 @@ button.link:active {
 
 .panel-grid .card {
   max-width: none;
+  gap: 8px;
 }
 
-.panel-grid .card h2 {
-  margin-top: 0;
+.panel-grid .card > h2,
+.panel-grid .card > p {
+  margin: 0;
 }
 
 .user-list {
   list-style: none;
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
