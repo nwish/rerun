@@ -10,7 +10,7 @@ colors:
   key-border-strong: "#4c4f57"
   ink: "#eae6dc"
   legend: "#b6ac99"
-  dim: "#919398"
+  dim: "#9c9ea4"
   action: "#ff5a1f"
   action-hover: "#ff7642"
   action-ink: "#1c0d04"
@@ -86,7 +86,7 @@ The palette is a dark gunmetal chassis with warm bone-colored ink and two discip
 - **Action Orange** (`#ff5a1f`): the one confident accent. Primary buttons, the active/selected nav item's ring and icon, the brand checkmark. Never used for a static label, a badge, or an illustration.
 
 ### Secondary
-- **Status Amber** (`#ffb020`): live readings only. The admin status-readout digits, pending-invite badges and avatars. Never used as a generic focus color or a decorative accent.
+- **Status Amber** (`#ffb020`): live readings only. The admin status-readout digits, pending-invite badges and avatars. Never used as a generic focus color or a decorative accent. The light theme darkens it to `#925000` to hold ≥4.5:1 on `--key` and `--key-hover`.
 
 ### Neutral
 - **Chassis** (`#1a1b1e`): page background.
@@ -95,7 +95,7 @@ The palette is a dark gunmetal chassis with warm bone-colored ink and two discip
 - **Key Border** (`#3d4046`) / **Key Border Strong** (`#4c4f57`): hairline edges on keys and avatar chips.
 - **Ink** (`#eae6dc`): primary text — warm off-white, never pure white.
 - **Legend** (`#b6ac99`): secondary text and labels — the "bone/putty keycap legend" tint.
-- **Dim** (`#919398`): tertiary/muted text (tuned to hold ≥4.5:1 on panel surfaces).
+- **Dim** (`#9c9ea4`): tertiary/muted text (tuned to hold ≥4.5:1 on every surface it lands on, including `--key` and `--key-hover`; the light theme uses `#66605a` for the same reason).
 - **Danger** (`#e66b60`): error text (tuned to hold ≥4.5:1 on panel surfaces).
 - **Success** (`#7fb069`): confirmation text.
 - **Focus** (`#cfd3da`): the neutral focus-visible ring — deliberately distinct from both accents so focus never reads as "primary action" or "live status."

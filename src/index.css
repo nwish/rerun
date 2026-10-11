@@ -21,7 +21,7 @@
   /* Ink: warm off-white body text, bone/putty legend tint for secondary */
   --ink: #eae6dc;
   --legend: #b6ac99;
-  --dim: #919398;
+  --dim: #9c9ea4;
 
   /* The one action key, and the amber status readout */
   --action: #ff5a1f;
@@ -58,9 +58,9 @@
 
   --ink: #201f1c;
   --legend: #625d55;
-  --dim: #777169;
+  --dim: #66605a;
 
-  --status: #a85c00;
+  --status: #925000;
   --success: #397142;
   --danger: #b23d35;
   --focus: #2563c7;
