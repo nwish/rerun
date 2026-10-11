@@ -2161,6 +2161,19 @@ div.live-person {
   height: 15px;
 }
 
+/* Three ghost buttons on one row crowd the right edge on phones; give the row the full
+   width and let the buttons wrap into equal, full-width tracks. */
+@media (max-width: 640px) {
+  .run-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .run-header-actions button.ghost {
+    flex: 1 1 10rem;
+  }
+}
+
 .run-item-list {
   list-style: none;
   margin: 0;
