@@ -2498,8 +2498,8 @@ button.danger:hover {
 }
 
 .run-header-icon {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   background: var(--key);
   border: 1px solid var(--key-border);
   border-radius: var(--radius-sm);
@@ -2507,6 +2507,6 @@ button.danger:hover {
 }
 
 .run-header-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
 }
