@@ -110,6 +110,20 @@ Both servers run under one command (`concurrently`); `api` runs in watch mode.
 
 ## Production
 
+### Release notes
+
+Pushing a version tag (including release candidates) builds the container and creates
+a **draft GitHub release** with git-cliff notes. Each merged PR appears once, using
+its title and PR link; commits outside merged PRs appear individually with commit
+links. Plain-English commit messages work without adopting Conventional Commits.
+Branch-sync merge commits are omitted. Deduplication uses GitHub PR membership,
+not guesses about whether two descriptions mean the same thing.
+
+Review the draft under **Releases**, edit the notes if needed, then publish it.
+Use **Actions → Draft release notes → Run workflow**, entering an existing tag,
+to regenerate a draft or generate notes for an older tag. Published releases are
+left untouched. No additional secrets are required.
+
 ```bash
 npm run build
 npm start        # serves UI and API on http://127.0.0.1:3001
