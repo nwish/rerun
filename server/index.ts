@@ -8,7 +8,7 @@ import { checklistsRouter } from './checklists.js'
 import { historyRouter } from './history.js'
 import { sharesRouter } from './shares.js'
 import { db } from './db.js'
-import { attachLive, updateLiveProfile } from './live.js'
+import { attachLive, dropUser, notifyOwner, updateLiveProfile } from './live.js'
 import { apiLimiter } from './limits.js'
 import { ICON_SET } from './icons.js'
 import { inviteMail, sendMail, smtpConfigured } from './mail.js'
@@ -25,6 +25,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 type UserRow = { id: number; email: string; pass_hash: string | null }
 type InviteRow = { id: number; email: string; pass_hash: string | null }
 
+type CountRow = { c: number }
+type AdminUserRow = { id: number; email: string; role: Role; activated: number }
+
+const countRow = (row: unknown): number => (row as CountRow).c
+
 const statements = {
   findUser: db.prepare('SELECT id, email, pass_hash FROM users WHERE email = ?'),
   countUsers: db.prepare('SELECT COUNT(*) AS c FROM users'),
@@ -38,10 +43,28 @@ const statements = {
   findUserByInviteToken: db.prepare('SELECT id, email, pass_hash FROM users WHERE invite_token_hash = ?'),
   updateProfile: db.prepare('UPDATE users SET display_name = ?, avatar = ? WHERE id = ?'),
   listUsers: db.prepare(
-    `SELECT email, display_name, avatar, role, (pass_hash IS NOT NULL) AS activated, invited_at, activated_at, created_at
+    `SELECT id, email, display_name, avatar, role, (pass_hash IS NOT NULL) AS activated, invited_at, activated_at, created_at
        FROM users
       ORDER BY (pass_hash IS NULL) DESC, COALESCE(invited_at, 0) DESC`
   ),
+  findAdminUser: db.prepare('SELECT id, email, role, (pass_hash IS NOT NULL) AS activated FROM users WHERE id = ?'),
+  blastLists: db.prepare('SELECT COUNT(*) AS c FROM checklists WHERE user_id = ?'),
+  blastItems: db.prepare(
+    'SELECT COUNT(*) AS c FROM checklist_items i JOIN checklists c ON c.id = i.checklist_id WHERE c.user_id = ?'
+  ),
+  blastRuns: db.prepare(
+    'SELECT COUNT(*) AS c FROM checklist_runs r JOIN checklists c ON c.id = r.checklist_id WHERE c.user_id = ?'
+  ),
+  // Runs they finished on other people's lists: the row survives the cascade, the author doesn't.
+  blastUnattributedRuns: db.prepare(
+    'SELECT COUNT(*) AS c FROM checklist_runs WHERE user_id = ? AND checklist_id NOT IN (SELECT id FROM checklists WHERE user_id = ?)'
+  ),
+  blastSharePartners: db.prepare('SELECT COUNT(DISTINCT grantee_id) AS c FROM checklist_shares WHERE owner_id = ?'),
+  blastSharesHeld: db.prepare('SELECT COUNT(*) AS c FROM checklist_shares WHERE grantee_id = ?'),
+  blastLiveRuns: db.prepare('SELECT COUNT(*) AS c FROM live_run_members WHERE user_id = ?'),
+  blastPersonalChecks: db.prepare('SELECT COUNT(*) AS c FROM item_checks WHERE user_id = ?'),
+  blastSessions: db.prepare('SELECT COUNT(*) AS c FROM sessions WHERE user_id = ? AND expires_at >= ?'),
+  deleteUser: db.prepare('DELETE FROM users WHERE id = ?'),
   insertSession: db.prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)'),
   deleteSession: db.prepare('DELETE FROM sessions WHERE token_hash = ?')
 }
@@ -226,7 +249,7 @@ app.post('/api/auth/logout', (req, res) => {
 })
 app.get('/api/auth/me', apiLimiter, requireAuth, (req, res) => {
   const user = (req as AuthedRequest).user
-  res.json({ email: user.email, role: user.role, name: user.name, avatar: user.avatar })
+  res.json({ id: user.id, email: user.email, role: user.role, name: user.name, avatar: user.avatar })
 })
 
 const NAME_MAX = 60
@@ -268,7 +291,7 @@ app.patch('/api/auth/me', apiLimiter, requireAuth, (req, res) => {
 
   statements.updateProfile.run(name, avatar, user.id)
   updateLiveProfile(user.id, name, avatar)
-  res.json({ email: user.email, role: user.role, name, avatar })
+  res.json({ id: user.id, email: user.email, role: user.role, name, avatar })
 })
 
 // Invited user sets their password via the single-use link.
@@ -333,6 +356,7 @@ app.post('/api/admin/invites', inviteLimiter, requireAdmin, async (req, res) => 
 
 app.get('/api/admin/users', adminUsersLimiter, requireAdmin, (_req, res) => {
   const users = statements.listUsers.all() as Array<{
+    id: number
     email: string
     display_name: string | null
     avatar: string | null
@@ -344,6 +368,7 @@ app.get('/api/admin/users', adminUsersLimiter, requireAdmin, (_req, res) => {
   }>
   res.json({
     users: users.map((u) => ({
+      id: u.id,
       email: u.email,
       name: u.display_name,
       avatar: u.avatar,
@@ -354,6 +379,53 @@ app.get('/api/admin/users', adminUsersLimiter, requireAdmin, (_req, res) => {
       created_at: u.created_at
     }))
   })
+})
+
+/** What deleting this account would take with it; the confirmation modal shows these counts. */
+app.get('/api/admin/users/:id/blast', adminUsersLimiter, requireAdmin, (req, res) => {
+  const id = Number(req.params.id)
+  const user = statements.findAdminUser.get(id) as AdminUserRow | undefined
+  if (!user) {
+    res.status(404).json({ error: 'user not found' })
+    return
+  }
+  res.json({
+    user: { id: user.id, email: user.email, role: user.role, activated: Boolean(user.activated) },
+    blast: {
+      lists: countRow(statements.blastLists.get(id)),
+      items: countRow(statements.blastItems.get(id)),
+      runs: countRow(statements.blastRuns.get(id)),
+      unattributedRuns: countRow(statements.blastUnattributedRuns.get(id, id)),
+      sharePartners: countRow(statements.blastSharePartners.get(id)),
+      sharesHeld: countRow(statements.blastSharesHeld.get(id)),
+      liveRuns: countRow(statements.blastLiveRuns.get(id)),
+      personalChecks: countRow(statements.blastPersonalChecks.get(id)),
+      sessions: countRow(statements.blastSessions.get(id, Date.now()))
+    }
+  })
+})
+
+/**
+ * Hard delete. The schema's ON DELETE CASCADE removes their lists, items, checks, shares, live
+ * memberships and sessions; runs they finished on other people's lists survive without an author.
+ * Refuses to remove the caller's own account.
+ */
+app.delete('/api/admin/users/:id', adminUsersLimiter, requireAdmin, (req, res) => {
+  const me = (req as unknown as AuthedRequest).user
+  const id = Number(req.params.id)
+  const user = statements.findAdminUser.get(id) as AdminUserRow | undefined
+  if (!user) {
+    res.status(404).json({ error: 'user not found' })
+    return
+  }
+  if (user.id === me.id) {
+    res.status(409).json({ error: 'you can’t delete your own account' })
+    return
+  }
+  statements.deleteUser.run(id)
+  notifyOwner(id) // lists they owned are gone: drop everyone still subscribed to them
+  dropUser(id) // close their sockets and re-check the runs they were a guest in
+  res.json({ ok: true, email: user.email })
 })
 
 app.get('/api/admin/settings', adminUsersLimiter, requireAdmin, (_req, res) => {

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { api, type AdminUser } from './api'
+import { api, type AdminUser, type Me, type UserBlastRadius } from './api'
 import Avatar, { personName } from './Avatar'
+import Modal from './Modal'
 
-export default function AdminPage() {
+export default function AdminPage({ me }: { me: Me }) {
   const [email, setEmail] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -12,6 +13,11 @@ export default function AdminPage() {
   const [registrationOpen, setRegistrationOpen] = useState<boolean | null>(null)
   const [registrationSaving, setRegistrationSaving] = useState(false)
   const [settingError, setSettingError] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
+  const [blast, setBlast] = useState<UserBlastRadius | null>(null)
+  const [blastError, setBlastError] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     api.users().then((r) => setUsers(r.users)).catch(() => setUsers([]))
@@ -67,6 +73,37 @@ export default function AdminPage() {
     } finally {
       setResending(null)
     }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await api.deleteUser(deleteTarget.id)
+      setDeleteTarget(null)
+      setBlast(null)
+      await refresh()
+    } catch (err) {
+      setDeleteError((err as Error).message)
+      setDeleting(false)
+    }
+  }
+
+  function closeDelete() {
+    if (deleting) return
+    setDeleteTarget(null)
+    setBlast(null)
+    setBlastError(null)
+    setDeleteError(null)
+  }
+
+  function openDelete(user: AdminUser) {
+    setDeleteTarget(user)
+    setBlast(null)
+    setBlastError(null)
+    setDeleteError(null)
+    api.userBlast(user.id).then(setBlast).catch((err) => setBlastError((err as Error).message))
   }
 
   const members = (users ?? []).filter((u) => u.activated)
@@ -143,6 +180,11 @@ export default function AdminPage() {
                     <span className="muted user-submeta">Joined {u.activated_at ? new Date(u.activated_at).toLocaleDateString() : u.created_at.slice(0, 10)}</span>
                   </div>
                   <span className={u.role === 'admin' ? 'badge badge-admin' : 'badge'}>{u.role}</span>
+                  {u.id !== me.id && (
+                    <button type="button" className="ghost danger" onClick={() => openDelete(u)}>
+                      Delete
+                    </button>
+                  )}
                 </li>
               ))}
               {pending.map((u) => (
@@ -156,6 +198,9 @@ export default function AdminPage() {
                   <button type="button" className="ghost" onClick={() => resend(u.email)} disabled={resending === u.email}>
                     {resending === u.email ? 'Resending…' : 'Resend'}
                   </button>
+                  <button type="button" className="ghost danger" onClick={() => openDelete(u)}>
+                    Delete
+                  </button>
                 </li>
               ))}
               {members.length + pending.length === 0 && <li className="muted">No users yet</li>}
@@ -163,6 +208,65 @@ export default function AdminPage() {
           )}
         </section>
       </div>
+
+      {deleteTarget && (
+        <Modal title={`Delete ${personName(deleteTarget)}’s account?`} onClose={closeDelete}>
+          <p className="muted">
+            This permanently deletes the account
+            {deleteTarget.activated ? '' : ', an invitation that was never accepted,'} and everything
+            only this account could see. It can’t be undone.
+          </p>
+          {blast === null && !blastError && <p className="muted">Checking what belongs to this account…</p>}
+          {blastError && (
+            <p className="error" role="alert">
+              {blastError}
+            </p>
+          )}
+          {blast && (
+            blastLines(blast.blast).length === 0 ? (
+              <p className="muted">Nothing else belongs to this account.</p>
+            ) : (
+              <ul className="blast-list">
+                {blastLines(blast.blast).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            )
+          )}
+          {deleteError && (
+            <p className="error" role="alert">
+              {deleteError}
+            </p>
+          )}
+          <div className="modal-actions">
+            <button type="button" className="ghost" onClick={closeDelete} disabled={deleting}>
+              Cancel
+            </button>
+            <button type="button" className="ghost danger" onClick={confirmDelete} disabled={deleting || blast === null}>
+              {deleting ? 'Deleting…' : 'Delete account'}
+            </button>
+          </div>
+        </Modal>
+      )}
     </>
   )
+}
+
+const count = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+
+/** One line per thing the cascade takes, so the admin sees the damage before confirming. */
+function blastLines(blast: UserBlastRadius['blast']): string[] {
+  const lines: string[] = []
+  if (blast.lists) lines.push(`${count(blast.lists, 'checklist')}${blast.items ? `, with ${count(blast.items, 'item')}` : ''}`)
+  if (blast.runs) lines.push(`${blast.runs} finished run ${blast.runs === 1 ? 'record' : 'records'}`)
+  if (blast.unattributedRuns)
+    lines.push(
+      `${blast.unattributedRuns} run${blast.unattributedRuns === 1 ? '' : 's'} they finished on someone else’s list ${blast.unattributedRuns === 1 ? 'stays' : 'stay'}, without an author`
+    )
+  if (blast.sharePartners) lines.push(`their sharing with ${count(blast.sharePartners, 'person')}`)
+  if (blast.sharesHeld) lines.push(`their access to ${count(blast.sharesHeld, 'list')} shared by other people`)
+  if (blast.liveRuns) lines.push(`their place in ${count(blast.liveRuns, 'live run')}`)
+  if (blast.personalChecks) lines.push('their checks on other people’s lists')
+  if (blast.sessions) lines.push(`signed out of ${count(blast.sessions, 'device')}`)
+  return lines
 }

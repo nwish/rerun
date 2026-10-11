@@ -2487,6 +2487,19 @@ div.live-person {
   margin-top: 18px;
 }
 
+/* What a user deletion takes with it, listed before the admin confirms. */
+.blast-list {
+  margin: 14px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.86rem;
+}
+
+.blast-list li::marker {
+  color: var(--danger);
+}
+
 button.danger {
   color: var(--danger);
   border-color: color-mix(in srgb, var(--danger) 55%, var(--key-border));
