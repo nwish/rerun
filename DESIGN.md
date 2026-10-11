@@ -173,7 +173,8 @@ Corners are barely rounded (6/10/14px) — keycaps have a slight bevel, not a so
 One continuous panel divided into hairline-separated segments (not repeated hero-metric cards) — each segment a status-colored (`--status`) tabular-mono number over a small uppercase mono label. Reads as a single instrument's multi-digit display, not three identical dashboard widgets. Stacks vertically below 640px.
 
 ### User / List Rows
-- **Style:** each row is a quiet keycap (`--key` background, rest shadow only — no hover/press, since rows aren't currently clickable as a whole) holding a rounded-square mono-initials avatar, stacked email/date in `--legend`/`--dim`, and a role or status badge.
+- **Style:** each row is a quiet keycap (`--key` background, rest shadow only — no hover/press, since rows aren't currently clickable as a whole) holding a rounded-square mono-initials avatar, stacked email/date in `--legend`/`--dim`, and a role or status badge stamped into the row's top-right corner.
+- **Row actions:** the keys a row offers (Delete, Resend) sit on their own line under the identity block, indented to the text column — the email keeps the row's full width and wraps rather than truncating.
 - **Pending state:** dashed status-colored avatar border + status-colored "PENDING" badge + a secondary "Resend" key.
 
 ## Do's and Don'ts

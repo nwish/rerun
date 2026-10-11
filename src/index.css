@@ -1000,6 +1000,29 @@ button.link:active {
   box-shadow: var(--shadow-key-rest);
 }
 
+/* Admin user list: the badge is stamped in the row's top-right corner and the buttons drop onto
+   their own line, so the email keeps the row's full width */
+.user-list .user-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 10px;
+}
+
+.user-list .user-row > .badge {
+  grid-area: 1 / 3;
+  align-self: start;
+}
+
+.user-list .user-actions {
+  grid-area: 2 / 2 / 3 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
 .user-avatar {
   width: 30px;
   height: 30px;
@@ -1125,16 +1148,12 @@ button.link:active {
 .user-email {
   font-family: var(--font-mono);
   font-size: 0.83rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
 }
 
 .user-submeta {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 
 .user-row button.ghost {

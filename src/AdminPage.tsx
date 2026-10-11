@@ -181,9 +181,11 @@ export default function AdminPage({ me }: { me: Me }) {
                   </div>
                   <span className={u.role === 'admin' ? 'badge badge-admin' : 'badge'}>{u.role}</span>
                   {u.id !== me.id && (
-                    <button type="button" className="ghost danger" onClick={() => openDelete(u)}>
-                      Delete
-                    </button>
+                    <div className="user-actions">
+                      <button type="button" className="ghost danger" onClick={() => openDelete(u)}>
+                        Delete
+                      </button>
+                    </div>
                   )}
                 </li>
               ))}
@@ -195,12 +197,14 @@ export default function AdminPage({ me }: { me: Me }) {
                     <span className="muted">Invited {u.invited_at ? new Date(u.invited_at).toLocaleDateString() : u.created_at.slice(0, 10)}</span>
                   </div>
                   <span className="badge badge-pending">Pending</span>
-                  <button type="button" className="ghost" onClick={() => resend(u.email)} disabled={resending === u.email}>
-                    {resending === u.email ? 'Resending…' : 'Resend'}
-                  </button>
-                  <button type="button" className="ghost danger" onClick={() => openDelete(u)}>
-                    Delete
-                  </button>
+                  <div className="user-actions">
+                    <button type="button" className="ghost" onClick={() => resend(u.email)} disabled={resending === u.email}>
+                      {resending === u.email ? 'Resending…' : 'Resend'}
+                    </button>
+                    <button type="button" className="ghost danger" onClick={() => openDelete(u)}>
+                      Delete
+                    </button>
+                  </div>
                 </li>
               ))}
               {members.length + pending.length === 0 && <li className="muted">No users yet</li>}
