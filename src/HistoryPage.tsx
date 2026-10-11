@@ -100,7 +100,7 @@ export default function HistoryPage() {
             <div key={w.weekStart} className="history-chart-col" aria-hidden="true">
               <span className="history-chart-count">{w.runs > 0 ? w.runs : ''}</span>
               <div className="history-chart-track">
-                <div className={`history-chart-bar${w.runs === 0 ? ' empty' : ''}`} style={{ height: `${(w.runs / maxWeek) * 100}%` }} />
+                <div className="history-chart-bar" style={{ height: `${(w.runs / maxWeek) * 100}%` }} />
               </div>
               <span className="history-chart-week">{i % 4 === 0 || i === data.weekly.length - 1 ? weekLabel(w.weekStart) : ''}</span>
             </div>

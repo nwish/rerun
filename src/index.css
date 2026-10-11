@@ -1657,9 +1657,22 @@ select:focus {
 }
 
 .history-chart {
+  position: relative;
   display: flex;
   gap: 6px;
   height: 150px;
+}
+
+/* One axis across the whole chart, at the bar baseline. A column is count (14px) + gap (4px)
+   + track + gap (4px) + week label (14px), so the track bottom sits 18px above the chart bottom.
+   Per-column borders would read as a dashed line across the 6px column gaps. */
+.history-chart::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  border-top: 1px solid var(--key-border-strong);
 }
 
 .history-chart-col {
@@ -1686,7 +1699,6 @@ select:focus {
   flex: 1;
   display: flex;
   align-items: flex-end;
-  border-bottom: 1px solid var(--key-border-strong);
 }
 
 .history-chart-bar {
@@ -1695,10 +1707,6 @@ select:focus {
   border-radius: 2px 2px 0 0;
 }
 
-.history-chart-bar.empty {
-  height: 2px !important;
-  background: var(--key-border);
-}
 
 .history-row {
   display: flex;
