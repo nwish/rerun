@@ -208,7 +208,7 @@ function livePeople(listId: number): LivePerson[] {
       (m) => [m.user_id, m.joined_at !== null ? 'joined' : m.requested ? 'requested' : 'invited'] as const
     )
   )
-  return [...effective.values()]
+  return rows
     .map((r) => ({ id: r.id, email: r.email, name: r.name, avatar: r.avatar, mode: r.mode, state: members.get(r.id) ?? ('none' as const) }))
     .sort((a, b) => a.email.localeCompare(b.email))
 }
@@ -584,7 +584,7 @@ checklistsRouter.delete('/:id/live', (req, res) => {
   if (!checklist) return
   statements.endLiveRun.run(checklist.id)
   notifyChanged(req, checklist.id)
-  res.json({ people: serializeLivePeople(livePeople(checklist.id, checklist.user_id)) })
+  res.json({ people: serializeLivePeople(livePeople(checklist.id)) })
 })
 
 checklistsRouter.post('/:id/live/join', (req, res) => {
@@ -641,7 +641,7 @@ checklistsRouter.post('/:id/live/respond', (req, res) => {
   if (!checklist) return
   const body = req.body as Record<string, unknown>
   const email = asString(body?.email).trim().toLowerCase()
-  const person = livePeople(checklist.id, checklist.user_id).find((p) => p.email.toLowerCase() === email && p.state === 'requested')
+  const person = livePeople(checklist.id).find((p) => p.email.toLowerCase() === email && p.state === 'requested')
   if (!person || typeof body?.accept !== 'boolean') {
     res.status(404).json({ error: 'no pending request from that person' })
     return
@@ -649,5 +649,5 @@ checklistsRouter.post('/:id/live/respond', (req, res) => {
   if (body.accept) statements.acceptRequest.run(checklist.id, person.id)
   else statements.dropRequest.run(checklist.id, person.id)
   notifyChanged(req, checklist.id)
-  res.json({ people: serializeLivePeople(livePeople(checklist.id, checklist.user_id)) })
+  res.json({ people: serializeLivePeople(livePeople(checklist.id)) })
 })

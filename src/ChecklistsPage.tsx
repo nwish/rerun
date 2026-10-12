@@ -495,7 +495,7 @@ function ChecklistCard({
 
       {sharing && (
         <Modal title={`Share “${summary.title}”`} onClose={() => setSharing(false)} className="share-modal">
-          <SharePanel checklistId={summary.id} shares={shares} onChanged={onChanged} onManageAll={onManageAll} />
+          <SharePanel checklistId={summary.id} shares={shares} onChanged={onChanged} />
         </Modal>
       )}
 
