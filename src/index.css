@@ -1932,6 +1932,25 @@ select:focus {
   color: var(--status);
 }
 
+/* Owner, share count and run status travel together: one row on wide screens,
+   a second line under the title on narrow ones. */
+.checklist-pick-tags {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Nothing in the row shrinks: the title takes the slack. The owner label keeps its
+   own cap, but a percentage would resolve against this shrink-to-fit wrapper. */
+.checklist-pick-tags > * {
+  flex-shrink: 0;
+}
+
+.checklist-pick-tags > .share-owner {
+  max-width: 22em;
+}
+
 /* Hover/tap turns the card the action color (global button:hover), so swap light text for the dark action ink. */
 .checklist-pick-card:hover,
 .checklist-pick-card:active,
@@ -1944,6 +1963,34 @@ select:focus {
 .checklist-pick-card:active .run-status {
   border-color: color-mix(in srgb, var(--action-ink) 45%, transparent);
   background: color-mix(in srgb, var(--action-ink) 10%, transparent);
+}
+
+/* A phone can't hold icon + title + owner + share + status + progress on one line
+   without cutting the list name, so the indicators drop below the title. The widest
+   seeded row needs ~430px of card, i.e. a ~470px viewport; 640px is where the rest of
+   the app goes mobile, and it leaves room for longer titles too. */
+@media (max-width: 640px) {
+  .checklist-pick-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 8px;
+  }
+
+  .checklist-pick-card .checklist-card-title {
+    grid-column: 2;
+  }
+
+  .checklist-pick-card > .checklist-card-meta {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .checklist-pick-tags {
+    grid-column: 2 / -1;
+    flex-wrap: wrap;
+  }
 }
 
 .run-checklist {

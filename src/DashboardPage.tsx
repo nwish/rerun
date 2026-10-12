@@ -232,16 +232,20 @@ export default function DashboardPage({ navigate, email }: { navigate: (to: stri
               <button key={s.id} type="button" className="checklist-pick-card" onClick={() => setActiveId(s.id)}>
                 <span className="checklist-card-icon"><Icon /></span>
                 <span className="checklist-card-title">{s.title}</span>
-                {s.access !== 'owner' && <span className="checklist-card-meta share-owner">from {ownerLabel(s)}</span>}
-                {sharedWith > 0 && (
-                  <span className="checklist-pick-share" aria-label={`Shared with ${sharedWith} ${sharedWith === 1 ? 'person' : 'people'}`} title={`Shared with ${sharedWith} ${sharedWith === 1 ? 'person' : 'people'}`}>
-                    {icons.share}
-                    <span>{sharedWith}</span>
-                  </span>
-                )}
-                {status && (
-                  <span className={`run-status ${status.tone}`} title={status.hint}>
-                    {status.label}
+                {(s.access !== 'owner' || sharedWith > 0 || status) && (
+                  <span className="checklist-pick-tags">
+                    {s.access !== 'owner' && <span className="checklist-card-meta share-owner">from {ownerLabel(s)}</span>}
+                    {sharedWith > 0 && (
+                      <span className="checklist-pick-share" aria-label={`Shared with ${sharedWith} ${sharedWith === 1 ? 'person' : 'people'}`} title={`Shared with ${sharedWith} ${sharedWith === 1 ? 'person' : 'people'}`}>
+                        {icons.share}
+                        <span>{sharedWith}</span>
+                      </span>
+                    )}
+                    {status && (
+                      <span className={`run-status ${status.tone}`} title={status.hint}>
+                        {status.label}
+                      </span>
+                    )}
                   </span>
                 )}
                 <span className="checklist-card-meta">{s.checkedCount}/{s.itemCount}</span>
