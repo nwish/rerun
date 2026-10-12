@@ -197,7 +197,7 @@ export default function DashboardPage({ navigate, email }: { navigate: (to: stri
         <div className="checklist-list">
           {summaries.map((s) => {
             const Icon = checklistIcon(s.icon)
-            const sharedWith = new Set(shares.filter((share) => share.checklistId === s.id || share.checklistId === null).map((share) => share.email)).size
+            const sharedWith = new Set(shares.filter((share) => share.checklistId === s.id).map((share) => share.email)).size
             return (
               <button key={s.id} type="button" className="checklist-pick-card" onClick={() => setActiveId(s.id)}>
                 <span className="checklist-card-icon"><Icon /></span>

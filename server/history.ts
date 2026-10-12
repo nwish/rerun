@@ -9,14 +9,13 @@ const TOP_MISSED = 10
 const DAY_MS = 24 * 60 * 60 * 1000
 
 // Joins that resolve whether the user can see a run's list: they own it, or have a
-// list-specific or all-lists share.
+// share on it.
 const RUN_JOINS = `
   JOIN checklists c ON c.id = r.checklist_id
-  LEFT JOIN checklist_shares per ON per.grantee_id = @me AND per.checklist_id = c.id
-  LEFT JOIN checklist_shares al ON al.grantee_id = @me AND al.owner_id = c.user_id AND al.checklist_id IS NULL`
+  LEFT JOIN checklist_shares per ON per.grantee_id = @me AND per.checklist_id = c.id`
 // Common runs on lists the user takes part in (owns, or collaborates on), plus the user's own
 // personal runs (shared mode). A shared-mode user isn't in the common run, so doesn't see it.
-const RUN_VISIBLE = `((r.personal = 0 AND (c.user_id = @me OR COALESCE(per.mode, al.mode) = 'collaborative')) OR (r.personal = 1 AND r.user_id = @me))`
+const RUN_VISIBLE = `((r.personal = 0 AND (c.user_id = @me OR per.mode = 'collaborative')) OR (r.personal = 1 AND r.user_id = @me))`
 const VISIBLE_RUNS = `
   FROM checklist_runs r ${RUN_JOINS}
  WHERE ${RUN_VISIBLE}`

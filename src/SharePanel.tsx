@@ -16,20 +16,17 @@ const MODE_HINT: Record<ShareMode, string> = {
 }
 
 /**
- * Manages shares for one scope: a single checklist, or (checklistId null) all of the
- * owner's lists. `shares` is the owner's full share list; this filters to its scope.
+ * Manages shares for one checklist. `shares` is the owner's full share list;
+ * this filters to shares on this list.
  */
 export default function SharePanel({
   checklistId,
   shares,
-  onChanged,
-  onManageAll
+  onChanged
 }: {
-  checklistId: number | null
+  checklistId: number
   shares: Share[]
   onChanged: () => void
-  /** Where people shared on every list are managed; shown as a link when this panel lists them. */
-  onManageAll?: () => void
 }) {
   const [email, setEmail] = useState('')
   const [permission, setPermission] = useState<SharePermission>('view')
@@ -51,9 +48,7 @@ export default function SharePanel({
   }, [removed])
 
   const scoped = shares.filter((s) => s.checklistId === checklistId)
-  // For a single list, other people may also have access through "share all".
-  const inherited = checklistId === null ? [] : shares.filter((s) => s.checklistId === null && !scoped.some((p) => p.email === s.email))
-  // Suggest people already shared with elsewhere (any list, or all lists) who aren't in this scope yet.
+  // Suggest people already shared with on other lists who aren't on this one yet.
   // Only people the owner has already shared with, so this can't be used to probe which emails have accounts.
   const suggestions = Array.from(new Map(shares.filter((s) => !scoped.some((p) => p.email === s.email)).map((s) => [s.email, s])).values())
 
@@ -97,7 +92,7 @@ export default function SharePanel({
   return (
     <div className="share-panel">
       {scoped.length === 0 ? (
-        <p className="muted share-empty">{checklistId === null ? 'Not shared with anyone.' : 'Not shared individually.'}</p>
+        <p className="muted share-empty">Not shared with anyone.</p>
       ) : (
         <ul className="share-list">
           {scoped.map((s) => (
@@ -141,29 +136,6 @@ export default function SharePanel({
             Undo
           </button>
         </p>
-      )}
-
-      {inherited.length > 0 && (
-        <div className="share-inherited">
-          <div className="share-inherited-header">
-            <p className="muted share-empty">Also has access through “Share all lists”</p>
-            {onManageAll && (
-              <button type="button" className="link" onClick={onManageAll}>
-                Manage in Settings
-              </button>
-            )}
-          </div>
-          <ul className="share-list">
-            {inherited.map((s) => (
-              <li key={s.id} className="share-row share-row-inherited">
-                <Avatar person={s} className="sm" />
-                <span className="share-email" title={s.email}>{s.name ? `${s.name} (${s.email})` : s.email}</span>
-                <span className="muted share-access-text">{ACCESS_LABEL[s.permission]} · {MODE_LABEL[s.mode]}</span>
-                <span className="share-badge">All lists</span>
-              </li>
-            ))}
-          </ul>
-        </div>
       )}
 
       <form onSubmit={add} className="share-form">

@@ -83,8 +83,8 @@ export type Checklist = {
   liveWith: number
   items: ChecklistItem[]
 }
-/** A share the current user has granted. checklistId null means "all my lists". */
-export type Share = Person & { id: number; permission: SharePermission; mode: ShareMode; checklistId: number | null }
+/** A share the current user has granted, on one of their lists. */
+export type Share = Person & { id: number; permission: SharePermission; mode: ShareMode; checklistId: number }
 
 /** Where someone you've shared a list with stands in the list's current live run. */
 export type LiveState = 'none' | 'invited' | 'requested' | 'joined'
@@ -190,7 +190,7 @@ export const api = {
     request<{ people: LivePerson[] }>(`/api/checklists/${id}/live/respond`, json('POST', `/api/checklists/${id}/live/respond`, { email, accept })),
 
   shares: () => request<{ shares: Share[] }>('/api/shares'),
-  putShare: (email: string, permission: SharePermission, mode: ShareMode, checklistId: number | null) =>
+  putShare: (email: string, permission: SharePermission, mode: ShareMode, checklistId: number) =>
     request<Share>('/api/shares', json('PUT', '/api/shares', { email, permission, mode, checklistId })),
   deleteShare: (id: number) => request<{ ok: boolean }>(`/api/shares/${id}`, { method: 'DELETE' }),
 
