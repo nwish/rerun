@@ -5,13 +5,11 @@ import { apiLimiter } from './limits.js'
 import { notifyOwner } from './live.js'
 import { requireAuth, type AuthedRequest } from './middleware.js'
 
-type Permission = 'view' | 'edit'
-type Mode = 'shared' | 'collaborative'
-type ShareRow = { id: number; email: string; name: string | null; avatar: string | null; permission: Permission; mode: Mode; checklist_id: number | null }
+type ShareRow = { id: number; email: string; name: string | null; avatar: string | null; checklist_id: number }
 
 const statements = {
   listShares: db.prepare(
-    `SELECT s.id, u.email, u.display_name AS name, u.avatar, s.permission, s.mode, s.checklist_id
+    `SELECT s.id, u.email, u.display_name AS name, u.avatar, s.checklist_id
        FROM checklist_shares s
        JOIN users u ON u.id = s.grantee_id
       WHERE s.owner_id = ?
@@ -23,27 +21,24 @@ const statements = {
   findShare: db.prepare(
     'SELECT id FROM checklist_shares WHERE owner_id = ? AND grantee_id = ? AND checklist_id = ?'
   ),
-  insertShare: db.prepare('INSERT INTO checklist_shares (owner_id, grantee_id, checklist_id, permission, mode) VALUES (?, ?, ?, ?, ?)'),
-  updateShare: db.prepare('UPDATE checklist_shares SET permission = ?, mode = ? WHERE id = ?'),
+  insertShare: db.prepare('INSERT INTO checklist_shares (owner_id, grantee_id, checklist_id) VALUES (?, ?, ?)'),
   getShare: db.prepare(
-    `SELECT s.id, u.email, u.display_name AS name, u.avatar, s.permission, s.mode, s.checklist_id
+    `SELECT s.id, u.email, u.display_name AS name, u.avatar, s.checklist_id
        FROM checklist_shares s JOIN users u ON u.id = s.grantee_id
       WHERE s.id = ?`
   ),
   deleteShare: db.prepare('DELETE FROM checklist_shares WHERE id = ? AND owner_id = ?'),
   shareGrantee: db.prepare('SELECT grantee_id FROM checklist_shares WHERE id = ? AND owner_id = ?'),
-  // Live-run invitations only make sense while the grantee still runs the list on their own, so drop
-  // them wherever the share is gone or collaborative.
+  // A revoked share ends the person's place in the owner's live runs.
   pruneMembers: db.prepare(
     `DELETE FROM live_run_members
       WHERE user_id = @g
-        AND checklist_id IN (SELECT id FROM checklists WHERE user_id = @owner)
-        AND (SELECT s.mode FROM checklist_shares s WHERE s.grantee_id = @g AND s.checklist_id = live_run_members.checklist_id) IS NOT 'shared'`
+        AND checklist_id IN (SELECT id FROM checklists WHERE user_id = @owner)`
   )
 }
 
 function serialize(row: ShareRow) {
-  return { id: row.id, email: row.email, name: row.name, avatar: row.avatar, permission: row.permission, mode: row.mode, checklistId: row.checklist_id }
+  return { id: row.id, email: row.email, name: row.name, avatar: row.avatar, checklistId: row.checklist_id }
 }
 
 // Unknown vs. known emails produce different errors, so keep guessing slow.
@@ -64,7 +59,7 @@ sharesRouter.get('/', (req, res) => {
   res.json({ shares: (statements.listShares.all(me.id) as ShareRow[]).map(serialize) })
 })
 
-/** Creates or updates a share on one checklist. */
+/** Shares one checklist with a person. Sharing someone who is already shared changes nothing. */
 sharesRouter.put('/', shareLimiter, (req, res) => {
   const me = (req as unknown as AuthedRequest).user
   const raw = req.body
@@ -75,16 +70,6 @@ sharesRouter.put('/', shareLimiter, (req, res) => {
     res.status(400).json({ error: 'email is required' })
     return
   }
-  if (body.permission !== 'view' && body.permission !== 'edit') {
-    res.status(400).json({ error: "permission must be 'view' or 'edit'" })
-    return
-  }
-  const permission: Permission = body.permission
-  if (body.mode !== 'shared' && body.mode !== 'collaborative') {
-    res.status(400).json({ error: "mode must be 'shared' or 'collaborative'" })
-    return
-  }
-  const mode: Mode = body.mode
 
   if (typeof body.checklistId !== 'number' || !Number.isInteger(body.checklistId)) {
     res.status(400).json({ error: 'checklistId is required' })
@@ -107,16 +92,12 @@ sharesRouter.put('/', shareLimiter, (req, res) => {
   }
 
   const existing = statements.findShare.get(me.id, grantee.id, checklistId) as { id: number } | undefined
-  let id: number
   if (existing) {
-    statements.updateShare.run(permission, mode, existing.id)
-    id = existing.id
-  } else {
-    id = Number(statements.insertShare.run(me.id, grantee.id, checklistId, permission, mode).lastInsertRowid)
+    res.json(serialize(statements.getShare.get(existing.id) as ShareRow))
+    return
   }
-  statements.pruneMembers.run({ g: grantee.id, owner: me.id })
-  notifyOwner(me.id) // a revoked or re-moded grantee must leave the live run
-  res.status(existing ? 200 : 201).json(serialize(statements.getShare.get(id) as ShareRow))
+  const id = Number(statements.insertShare.run(me.id, grantee.id, checklistId).lastInsertRowid)
+  res.status(201).json(serialize(statements.getShare.get(id) as ShareRow))
 })
 
 sharesRouter.delete('/:id', (req, res) => {
