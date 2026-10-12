@@ -1,8 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { api, type Me, type Share } from './api'
+import { api, type Me } from './api'
 import Avatar, { initials } from './Avatar'
 import IconPicker from './IconPicker'
-import SharePanel from './SharePanel'
 import { applyTheme, applyThemeMode, getStoredTheme, getStoredThemeMode, THEMES, type ThemeId, type ThemeMode } from './theme'
 
 const NAME_MAX = 60
@@ -21,19 +20,10 @@ export default function SettingsPage({ user, onSignOut, onProfileChange }: { use
   const [nameDraft, setNameDraft] = useState(user.name ?? '')
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
-  const [shares, setShares] = useState<Share[]>([])
-
-  useEffect(() => {
-    refreshShares()
-  }, [])
 
   useEffect(() => {
     setNameDraft(user.name ?? '')
   }, [user.name])
-
-  async function refreshShares() {
-    setShares((await api.shares()).shares)
-  }
 
   function selectTheme(id: ThemeId) {
     applyTheme(id)
@@ -114,14 +104,6 @@ export default function SettingsPage({ user, onSignOut, onProfileChange }: { use
           {signOutIcon}
           Sign out
         </button>
-      </section>
-
-      <section className="card">
-        <h2>Share all lists</h2>
-        <p className="muted">
-          People added here can see every list you have, including ones you create later. A list's own sharing settings override this for that list.
-        </p>
-        <SharePanel checklistId={null} shares={shares} onChanged={refreshShares} />
       </section>
 
       <section className="card">

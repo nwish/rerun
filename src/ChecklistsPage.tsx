@@ -163,7 +163,6 @@ export default function ChecklistsPage({ navigate }: { navigate: (to: string) =>
               key={summary.id}
               summary={summary}
               shares={shares}
-              onManageAll={() => navigate('/settings')}
               expanded={expandedId === summary.id}
               onToggle={() => setExpandedId(expandedId === summary.id ? null : summary.id)}
               onDeleted={handleDeleted}
@@ -180,7 +179,6 @@ export default function ChecklistsPage({ navigate }: { navigate: (to: string) =>
 function ChecklistCard({
   summary,
   shares,
-  onManageAll,
   expanded,
   onToggle,
   onDeleted,
@@ -194,7 +192,6 @@ function ChecklistCard({
   onDeleted: (id: number) => void
   onDuplicated: (id: number) => void
   onChanged: () => void
-  onManageAll: () => void
 }) {
   const isOwner = summary.access === 'owner'
   const canEdit = summary.access !== 'view'
@@ -379,8 +376,8 @@ function ChecklistCard({
   }
 
   const HeaderIcon = checklistIcon(summary.icon)
-  // People with access to this list: shared on it directly, or through "Share all lists".
-  const sharedWith = new Set(shares.filter((s) => s.checklistId === summary.id || s.checklistId === null).map((s) => s.email)).size
+  // People with access to this list.
+  const sharedWith = new Set(shares.filter((s) => s.checklistId === summary.id).map((s) => s.email)).size
 
   return (
     <div className="checklist-card">
