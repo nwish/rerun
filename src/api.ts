@@ -54,6 +54,7 @@ export type ChecklistSummary = {
   liveJoined: boolean
   liveRequested: boolean
   liveRequests: number
+  liveInvited: number
   liveWith: number
   itemCount: number
   checkedCount: number
