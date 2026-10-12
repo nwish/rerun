@@ -237,6 +237,12 @@ export const migrations: Migration[] = [
     // constraints in place, so the table is rebuilt (see the rules at the top).
     up(db) {
       db.exec(`
+        -- Free the index names first: they are global, and the unique one must exist on the
+        -- new table before the expansion runs, so INSERT OR IGNORE can skip the pairs that
+        -- already have a list-specific share.
+        DROP INDEX IF EXISTS idx_checklist_shares_unique;
+        DROP INDEX IF EXISTS idx_checklist_shares_grantee;
+
         CREATE TABLE checklist_shares_new (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -247,6 +253,8 @@ export const migrations: Migration[] = [
           created_at TEXT NOT NULL DEFAULT (datetime('now')),
           CHECK (owner_id <> grantee_id)
         );
+        CREATE UNIQUE INDEX idx_checklist_shares_unique ON checklist_shares_new(owner_id, grantee_id, checklist_id);
+        CREATE INDEX idx_checklist_shares_grantee ON checklist_shares_new(grantee_id);
 
         -- Keep the list-specific rows as they are.
         INSERT INTO checklist_shares_new (id, owner_id, grantee_id, checklist_id, permission, mode, created_at)
@@ -262,13 +270,8 @@ export const migrations: Migration[] = [
             JOIN checklists c ON c.user_id = s.owner_id
            WHERE s.checklist_id IS NULL;
 
-        DROP INDEX idx_checklist_shares_unique;
-        DROP INDEX idx_checklist_shares_grantee;
         DROP TABLE checklist_shares;
         ALTER TABLE checklist_shares_new RENAME TO checklist_shares;
-
-        CREATE UNIQUE INDEX idx_checklist_shares_unique ON checklist_shares(owner_id, grantee_id, checklist_id);
-        CREATE INDEX idx_checklist_shares_grantee ON checklist_shares(grantee_id);
       `)
     }
   }
