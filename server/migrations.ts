@@ -226,5 +226,50 @@ export const migrations: Migration[] = [
     up(db) {
       db.exec(`ALTER TABLE live_run_members ADD COLUMN requested INTEGER NOT NULL DEFAULT 0;`)
     }
+  },
+  {
+    version: 6,
+    name: 'drop share-all (checklist_id NOT NULL; all-lists shares expand to the owner\'s lists)',
+    // "Share all lists" is gone. Everyone who had one keeps access to the lists that existed
+    // when it was granted — each all-lists row becomes one row per list the owner had — but
+    // lists created later are no longer shared automatically. checklist_id is NOT NULL now,
+    // so the table can't hold an all-lists row again; SQLite can't change a column's
+    // constraints in place, so the table is rebuilt (see the rules at the top).
+    up(db) {
+      db.exec(`
+        CREATE TABLE checklist_shares_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          grantee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          checklist_id INTEGER NOT NULL REFERENCES checklists(id) ON DELETE CASCADE,
+          permission TEXT NOT NULL CHECK (permission IN ('view', 'edit')),
+          mode TEXT NOT NULL DEFAULT 'collaborative' CHECK (mode IN ('shared', 'collaborative')),
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          CHECK (owner_id <> grantee_id)
+        );
+
+        -- Keep the list-specific rows as they are.
+        INSERT INTO checklist_shares_new (id, owner_id, grantee_id, checklist_id, permission, mode, created_at)
+          SELECT id, owner_id, grantee_id, checklist_id, permission, mode, created_at
+            FROM checklist_shares
+           WHERE checklist_id IS NOT NULL;
+
+        -- Expand each all-lists share over the owner's lists. A share already on one of those
+        -- lists wins (it overrode the all-lists one), so those expansions are skipped.
+        INSERT OR IGNORE INTO checklist_shares_new (owner_id, grantee_id, checklist_id, permission, mode, created_at)
+          SELECT s.owner_id, s.grantee_id, c.id, s.permission, s.mode, s.created_at
+            FROM checklist_shares s
+            JOIN checklists c ON c.user_id = s.owner_id
+           WHERE s.checklist_id IS NULL;
+
+        DROP INDEX idx_checklist_shares_unique;
+        DROP INDEX idx_checklist_shares_grantee;
+        DROP TABLE checklist_shares;
+        ALTER TABLE checklist_shares_new RENAME TO checklist_shares;
+
+        CREATE UNIQUE INDEX idx_checklist_shares_unique ON checklist_shares(owner_id, grantee_id, checklist_id);
+        CREATE INDEX idx_checklist_shares_grantee ON checklist_shares(grantee_id);
+      `)
+    }
   }
 ]

@@ -12,12 +12,8 @@ export const ACCESS_RANK: Record<Access, number> = { view: 1, edit: 2, owner: 3 
 
 const statements = {
   owner: db.prepare('SELECT user_id FROM checklists WHERE id = ?'),
-  // A list-specific share beats the owner's all-lists share (checklist_id IS NULL sorts last).
   share: db.prepare(
-    `SELECT permission, mode FROM checklist_shares
-      WHERE grantee_id = @me AND (checklist_id = @id OR (owner_id = @owner AND checklist_id IS NULL))
-      ORDER BY checklist_id IS NULL
-      LIMIT 1`
+    'SELECT permission, mode FROM checklist_shares WHERE grantee_id = @me AND checklist_id = @id'
   ),
   joined: db.prepare('SELECT 1 FROM live_run_members WHERE checklist_id = ? AND user_id = ? AND joined_at IS NOT NULL')
 }

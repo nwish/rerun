@@ -21,7 +21,7 @@ const statements = {
   findActiveUser: db.prepare('SELECT id FROM users WHERE email = ? AND pass_hash IS NOT NULL'),
   findOwnedChecklist: db.prepare('SELECT id FROM checklists WHERE id = ? AND user_id = ?'),
   findShare: db.prepare(
-    'SELECT id FROM checklist_shares WHERE owner_id = ? AND grantee_id = ? AND COALESCE(checklist_id, 0) = COALESCE(?, 0)'
+    'SELECT id FROM checklist_shares WHERE owner_id = ? AND grantee_id = ? AND checklist_id = ?'
   ),
   insertShare: db.prepare('INSERT INTO checklist_shares (owner_id, grantee_id, checklist_id, permission, mode) VALUES (?, ?, ?, ?, ?)'),
   updateShare: db.prepare('UPDATE checklist_shares SET permission = ?, mode = ? WHERE id = ?'),
@@ -33,15 +33,12 @@ const statements = {
   deleteShare: db.prepare('DELETE FROM checklist_shares WHERE id = ? AND owner_id = ?'),
   shareGrantee: db.prepare('SELECT grantee_id FROM checklist_shares WHERE id = ? AND owner_id = ?'),
   // Live-run invitations only make sense while the grantee still runs the list on their own, so drop
-  // them wherever the effective share (a list-specific one beats an all-lists one) is gone or collaborative.
+  // them wherever the share is gone or collaborative.
   pruneMembers: db.prepare(
     `DELETE FROM live_run_members
       WHERE user_id = @g
         AND checklist_id IN (SELECT id FROM checklists WHERE user_id = @owner)
-        AND COALESCE(
-              (SELECT s.mode FROM checklist_shares s WHERE s.grantee_id = @g AND s.checklist_id = live_run_members.checklist_id),
-              (SELECT s.mode FROM checklist_shares s WHERE s.grantee_id = @g AND s.owner_id = @owner AND s.checklist_id IS NULL)
-            ) IS NOT 'shared'`
+        AND (SELECT s.mode FROM checklist_shares s WHERE s.grantee_id = @g AND s.checklist_id = live_run_members.checklist_id) IS NOT 'shared'`
   )
 }
 
@@ -61,13 +58,13 @@ const shareLimiter = rateLimit({
 export const sharesRouter = Router()
 sharesRouter.use(apiLimiter, requireAuth)
 
-/** Shares the current user has granted: list-specific (checklistId set) and all-lists (checklistId null). */
+/** Shares the current user has granted, one per (person, list). */
 sharesRouter.get('/', (req, res) => {
   const me = (req as unknown as AuthedRequest).user
   res.json({ shares: (statements.listShares.all(me.id) as ShareRow[]).map(serialize) })
 })
 
-/** Creates or updates a share. checklistId omitted/null shares every list, including future ones. */
+/** Creates or updates a share on one checklist. */
 sharesRouter.put('/', shareLimiter, (req, res) => {
   const me = (req as unknown as AuthedRequest).user
   const raw = req.body
@@ -89,18 +86,15 @@ sharesRouter.put('/', shareLimiter, (req, res) => {
   }
   const mode: Mode = body.mode
 
-  let checklistId: number | null = null
-  if (body.checklistId !== undefined && body.checklistId !== null) {
-    if (typeof body.checklistId !== 'number' || !Number.isInteger(body.checklistId)) {
-      res.status(400).json({ error: 'invalid checklistId' })
-      return
-    }
-    if (!statements.findOwnedChecklist.get(body.checklistId, me.id)) {
-      res.status(404).json({ error: 'checklist not found' })
-      return
-    }
-    checklistId = body.checklistId
+  if (typeof body.checklistId !== 'number' || !Number.isInteger(body.checklistId)) {
+    res.status(400).json({ error: 'checklistId is required' })
+    return
   }
+  if (!statements.findOwnedChecklist.get(body.checklistId, me.id)) {
+    res.status(404).json({ error: 'checklist not found' })
+    return
+  }
+  const checklistId = body.checklistId
 
   const grantee = statements.findActiveUser.get(email) as { id: number } | undefined
   if (!grantee) {

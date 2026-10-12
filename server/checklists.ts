@@ -39,11 +39,11 @@ type ListRow = {
 }
 
 const statements = {
-  // Own lists plus lists shared with @me. A list-specific share overrides the owner's all-lists share.
+  // Own lists plus lists shared with @me.
   listChecklists: db.prepare(
     `SELECT c.id, c.title, c.icon, c.updated_at, u.email AS owner_email, u.display_name AS owner_name, u.avatar AS owner_avatar,
-            CASE WHEN c.user_id = @me THEN 'owner' ELSE COALESCE(per.permission, al.permission) END AS access,
-            CASE WHEN c.user_id <> @me AND COALESCE(per.mode, al.mode) = 'shared' AND m.joined_at IS NULL THEN 'personal' ELSE 'common' END AS scope,
+            CASE WHEN c.user_id = @me THEN 'owner' ELSE per.permission END AS access,
+            CASE WHEN c.user_id <> @me AND per.mode = 'shared' AND m.joined_at IS NULL THEN 'personal' ELSE 'common' END AS scope,
             c.user_id AS owner_id,
             (m.requested = 0 AND m.joined_at IS NULL) AS live_invite,
             (m.requested = 1 AND m.joined_at IS NULL) AS live_requested,
@@ -52,15 +52,14 @@ const statements = {
                  THEN (SELECT COUNT(*) FROM live_run_members r WHERE r.checklist_id = c.id AND r.requested = 1 AND r.joined_at IS NULL)
                  ELSE 0 END AS live_requests,
             COUNT(ci.id) AS item_count,
-            COALESCE(SUM(CASE WHEN c.user_id <> @me AND COALESCE(per.mode, al.mode) = 'shared' AND m.joined_at IS NULL THEN ic.item_id IS NOT NULL ELSE ci.checked END), 0) AS checked_count
+            COALESCE(SUM(CASE WHEN c.user_id <> @me AND per.mode = 'shared' AND m.joined_at IS NULL THEN ic.item_id IS NOT NULL ELSE ci.checked END), 0) AS checked_count
        FROM checklists c
        JOIN users u ON u.id = c.user_id
        LEFT JOIN checklist_shares per ON per.grantee_id = @me AND per.checklist_id = c.id
-       LEFT JOIN checklist_shares al ON al.grantee_id = @me AND al.owner_id = c.user_id AND al.checklist_id IS NULL
        LEFT JOIN checklist_items ci ON ci.checklist_id = c.id
        LEFT JOIN item_checks ic ON ic.item_id = ci.id AND ic.user_id = @me
        LEFT JOIN live_run_members m ON m.checklist_id = c.id AND m.user_id = @me
-      WHERE c.user_id = @me OR per.id IS NOT NULL OR al.id IS NOT NULL
+      WHERE c.user_id = @me OR per.id IS NOT NULL
       GROUP BY c.id
       ORDER BY c.updated_at DESC, c.id DESC`
   ),
@@ -127,9 +126,9 @@ const statements = {
 
   // Live runs: invited people who run a list on their own can join one shared run of it.
   grantees: db.prepare(
-    `SELECT s.grantee_id AS id, u.email, u.display_name AS name, u.avatar, s.mode, s.checklist_id
+    `SELECT s.grantee_id AS id, u.email, u.display_name AS name, u.avatar, s.mode
        FROM checklist_shares s JOIN users u ON u.id = s.grantee_id
-      WHERE s.checklist_id = @id OR (s.owner_id = @owner AND s.checklist_id IS NULL)`
+      WHERE s.checklist_id = @id`
   ),
   members: db.prepare('SELECT user_id, joined_at, requested FROM live_run_members WHERE checklist_id = ?'),
   getMember: db.prepare('SELECT joined_at, requested FROM live_run_members WHERE checklist_id = ? AND user_id = ?'),
@@ -201,14 +200,9 @@ type LivePerson = {
   state: 'none' | 'invited' | 'requested' | 'joined'
 }
 
-/** Everyone the list is shared with (a list-specific share beats an all-lists one), and where they stand in the current live run. */
-function livePeople(listId: number, ownerId: number): LivePerson[] {
-  const rows = statements.grantees.all({ id: listId, owner: ownerId }) as Array<Omit<LivePerson, 'state'> & { checklist_id: number | null }>
-  const effective = new Map<number, (typeof rows)[number]>()
-  for (const r of rows) {
-    const current = effective.get(r.id)
-    if (!current || (current.checklist_id === null && r.checklist_id !== null)) effective.set(r.id, r)
-  }
+/** Everyone the list is shared with, and where they stand in the current live run. */
+function livePeople(listId: number): LivePerson[] {
+  const rows = statements.grantees.all({ id: listId }) as Array<Omit<LivePerson, 'state'>>
   const members = new Map(
     (statements.members.all(listId) as Array<{ user_id: number; joined_at: string | null; requested: number }>).map(
       (m) => [m.user_id, m.joined_at !== null ? 'joined' : m.requested ? 'requested' : 'invited'] as const
@@ -222,7 +216,7 @@ function livePeople(listId: number, ownerId: number): LivePerson[] {
 /** How many other people are in the list's common run: the owner (unless it's you), collaborators, and joined invitees. */
 function othersInRun(listId: number, ownerId: number, userId: number): number {
   let n = ownerId === userId ? 0 : 1
-  for (const p of livePeople(listId, ownerId)) {
+  for (const p of livePeople(listId)) {
     if (p.id !== userId && (p.mode === 'collaborative' || p.state === 'joined')) n++
   }
   return n
@@ -551,7 +545,7 @@ function serializeLivePeople(people: LivePerson[]) {
 checklistsRouter.get('/:id/live', (req, res) => {
   const checklist = loadChecklist(req as unknown as AuthedRequest, res, Number(req.params.id), 'owner')
   if (!checklist) return
-  res.json({ people: serializeLivePeople(livePeople(checklist.id, checklist.user_id)) })
+  res.json({ people: serializeLivePeople(livePeople(checklist.id)) })
 })
 
 /** Sets who is invited into the current run. Only people who run the list on their own ('shared' mode) can be invited. */
@@ -564,7 +558,7 @@ checklistsRouter.put('/:id/live', (req, res) => {
     return
   }
   const wanted = new Set((emails as string[]).map((e) => e.trim().toLowerCase()))
-  const people = livePeople(checklist.id, checklist.user_id)
+  const people = livePeople(checklist.id)
   const invitable = new Set(people.filter((p) => p.mode === 'shared').map((p) => p.email.toLowerCase()))
   const stranger = [...wanted].find((e) => !invitable.has(e))
   if (stranger !== undefined) {
@@ -581,7 +575,7 @@ checklistsRouter.put('/:id/live', (req, res) => {
     }
   })()
   notifyChanged(req, checklist.id) // anyone uninvited who had joined leaves the live run
-  res.json({ people: serializeLivePeople(livePeople(checklist.id, checklist.user_id)) })
+  res.json({ people: serializeLivePeople(livePeople(checklist.id)) })
 })
 
 /** Ends the live run for everyone invited: they go back to running the list on their own. */
