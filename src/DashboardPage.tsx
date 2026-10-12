@@ -52,6 +52,35 @@ const icons = {
   )
 }
 
+/**
+ * One pill per list in the picker: the most actionable run-together state wins.
+ * These are roster states, not presence - none of them claims anyone is online now.
+ */
+function runStatus(s: ChecklistSummary): { label: string; tone: 'needs' | 'active' | 'waiting'; hint: string } | null {
+  if (s.access === 'owner') {
+    if (s.liveRequests > 0) {
+      const n = s.liveRequests
+      return { label: `${n} ${n === 1 ? 'wants' : 'want'} to join`, tone: 'needs', hint: 'Waiting for you to answer a request to run this list together' }
+    }
+    if (s.liveWith > 0) {
+      const n = s.liveWith
+      return { label: `Running with ${n}`, tone: 'active', hint: `${n} ${n === 1 ? 'person works' : 'people work'} in your live run on this list` }
+    }
+    if (s.liveInvited > 0) {
+      const n = s.liveInvited
+      return { label: `${n} invited`, tone: 'waiting', hint: 'Invited to your live run; not joined yet' }
+    }
+    return null
+  }
+  if (s.liveRequested) return { label: 'Requested', tone: 'waiting', hint: 'You asked to run this list with its owner; they have not answered yet' }
+  if (s.liveInvite) return { label: 'Invited', tone: 'needs', hint: 'The owner invited you into their live run; open the list to join it' }
+  if (s.liveJoined) {
+    const n = s.liveWith
+    return { label: `In run · ${n + 1}`, tone: 'active', hint: `You and ${n} ${n === 1 ? 'other person' : 'other people'} share one set of checks on this list` }
+  }
+  return null
+}
+
 export default function DashboardPage({ navigate, email }: { navigate: (to: string) => void; email: string }) {
   const [summaries, setSummaries] = useState<ChecklistSummary[] | null>(null)
   const [shares, setShares] = useState<Share[]>([])
@@ -198,6 +227,7 @@ export default function DashboardPage({ navigate, email }: { navigate: (to: stri
           {summaries.map((s) => {
             const Icon = checklistIcon(s.icon)
             const sharedWith = new Set(shares.filter((share) => share.checklistId === s.id).map((share) => share.email)).size
+            const status = runStatus(s)
             return (
               <button key={s.id} type="button" className="checklist-pick-card" onClick={() => setActiveId(s.id)}>
                 <span className="checklist-card-icon"><Icon /></span>
@@ -209,8 +239,11 @@ export default function DashboardPage({ navigate, email }: { navigate: (to: stri
                     <span>{sharedWith}</span>
                   </span>
                 )}
-                {s.liveInvite && <span className="run-invite-tag">Live run invite</span>}
-                {s.liveRequests > 0 && <span className="run-invite-tag">{s.liveRequests} want to run together</span>}
+                {status && (
+                  <span className={`run-status ${status.tone}`} title={status.hint}>
+                    {status.label}
+                  </span>
+                )}
                 <span className="checklist-card-meta">{s.checkedCount}/{s.itemCount}</span>
               </button>
             )

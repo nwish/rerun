@@ -36,6 +36,7 @@ type ListRow = {
   live_joined: number
   live_requested: number
   live_requests: number
+  live_invited: number
 }
 
 const statements = {
@@ -51,6 +52,10 @@ const statements = {
             CASE WHEN c.user_id = @me
                  THEN (SELECT COUNT(*) FROM live_run_members r WHERE r.checklist_id = c.id AND r.requested = 1 AND r.joined_at IS NULL)
                  ELSE 0 END AS live_requests,
+            -- people the owner has invited into the run who haven't joined it yet
+            CASE WHEN c.user_id = @me
+                 THEN (SELECT COUNT(*) FROM live_run_members v WHERE v.checklist_id = c.id AND v.invited_at IS NOT NULL AND v.joined_at IS NULL AND v.requested = 0)
+                 ELSE 0 END AS live_invited,
             COUNT(ci.id) AS item_count,
             COALESCE(SUM(CASE WHEN c.user_id <> @me AND m.joined_at IS NULL THEN ic.item_id IS NOT NULL ELSE ci.checked END), 0) AS checked_count
        FROM checklists c
@@ -268,6 +273,7 @@ checklistsRouter.get('/', (req, res) => {
       liveJoined: Boolean(r.live_joined),
       liveRequested: Boolean(r.live_requested),
       liveRequests: r.live_requests,
+      liveInvited: r.live_invited,
       liveWith: r.scope === 'common' ? othersInRun(r.id, r.owner_id, (req as unknown as AuthedRequest).user.id) : 0,
       ownerEmail: r.owner_email,
       ownerName: r.owner_name,
