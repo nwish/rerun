@@ -274,5 +274,79 @@ export const migrations: Migration[] = [
         ALTER TABLE checklist_shares_new RENAME TO checklist_shares;
       `)
     }
+  },
+  {
+    version: 7,
+    name: 'shares grant full item access; collaboration moves to the live run',
+    // 'view' vs 'edit' and 'shared' vs 'collaborative' are gone: a share now means one thing -
+    // this person can run this list and change it. Who works in the owner's run is decided per
+    // run by the live-run roster, so each collaborative grant becomes a member of that list's
+    // run first (nobody drops out of a run they were in), and ever_joined records that they
+    // took part so their past runs stay visible in history. SQLite can't drop constrained
+    // columns in place, so checklist_shares is rebuilt (see the rules at the top).
+    up(db) {
+      db.exec(`
+        ALTER TABLE live_run_members ADD COLUMN ever_joined INTEGER NOT NULL DEFAULT 0;
+
+        -- Anyone already in a run keeps that standing, however they got there.
+        UPDATE live_run_members SET ever_joined = 1 WHERE joined_at IS NOT NULL;
+
+        -- Collaborative shares become roster members of the list, in the run, having joined.
+        INSERT OR IGNORE INTO live_run_members (checklist_id, user_id, joined_at, ever_joined)
+          SELECT s.checklist_id, s.grantee_id, datetime('now'), 1
+            FROM checklist_shares s
+           WHERE s.mode = 'collaborative';
+
+        DROP INDEX IF EXISTS idx_checklist_shares_unique;
+        DROP INDEX IF EXISTS idx_checklist_shares_grantee;
+
+        CREATE TABLE checklist_shares_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          grantee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          checklist_id INTEGER NOT NULL REFERENCES checklists(id) ON DELETE CASCADE,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          CHECK (owner_id <> grantee_id)
+        );
+        CREATE UNIQUE INDEX idx_checklist_shares_unique ON checklist_shares_new(owner_id, grantee_id, checklist_id);
+        CREATE INDEX idx_checklist_shares_grantee ON checklist_shares_new(grantee_id);
+
+        INSERT INTO checklist_shares_new (id, owner_id, grantee_id, checklist_id, created_at)
+          SELECT id, owner_id, grantee_id, checklist_id, created_at FROM checklist_shares;
+
+        DROP TABLE checklist_shares;
+        ALTER TABLE checklist_shares_new RENAME TO checklist_shares;
+      `)
+    }
+  },
+  {
+    version: 8,
+    name: 'runs record who took part in them',
+    // History shows the runs a person took part in. The roster only describes the current and
+    // future runs, so a finished run keeps its participants: leaving a run, the roster or the
+    // share never rewrites past history, and runs recorded after someone left stay out of it.
+    up(db) {
+      db.exec(`
+        CREATE TABLE checklist_run_members (
+          run_id INTEGER NOT NULL REFERENCES checklist_runs(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          PRIMARY KEY (run_id, user_id)
+        );
+        CREATE INDEX idx_checklist_run_members_user ON checklist_run_members(user_id);
+
+        -- Runs recorded before this existed: credit the owner and everyone who had taken part.
+        INSERT OR IGNORE INTO checklist_run_members (run_id, user_id)
+          SELECT r.id, c.user_id
+            FROM checklist_runs r JOIN checklists c ON c.id = r.checklist_id
+           WHERE r.personal = 0;
+        INSERT OR IGNORE INTO checklist_run_members (run_id, user_id)
+          SELECT r.id, m.user_id
+            FROM checklist_runs r
+            JOIN live_run_members m ON m.checklist_id = r.checklist_id AND m.ever_joined = 1
+           WHERE r.personal = 0;
+
+        ALTER TABLE live_run_members DROP COLUMN ever_joined;
+      `)
+    }
   }
 ]

@@ -225,7 +225,6 @@ export default function DashboardPage({ navigate, email }: { navigate: (to: stri
 
   const total = checklist.items.length
   const done = checklist.items.filter((i) => i.checked).length
-  const canEdit = checklist.access !== 'view'
   const TitleIcon = checklistIcon(checklist.icon)
 
   return (
@@ -347,11 +346,7 @@ export default function DashboardPage({ navigate, email }: { navigate: (to: stri
       {total === 0 ? (
         <p className="muted">
           This checklist has no items yet.{' '}
-          {canEdit && (
-            <>
-              <button type="button" className="link" onClick={() => navigate('/checklists')}>Add some</button>.
-            </>
-          )}
+          <button type="button" className="link" onClick={() => navigate('/checklists')}>Add some</button>.
         </p>
       ) : (
         <ul className="run-item-list">

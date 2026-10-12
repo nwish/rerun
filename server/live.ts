@@ -6,9 +6,9 @@ import { authenticate } from './middleware.js'
 
 /**
  * Live collaborative runs. A client subscribes to a checklist it works on in the common run
- * (its owner, or a collaborator). The server only sends small notifications: `changed` (refetch
- * over HTTP), `presence` (who is subscribed), `left` (access or mode changed, or the list is
- * gone). Data and permissions stay on the HTTP API.
+ * (its owner, or someone in its live run). The server only sends small notifications: `changed`
+ * (refetch over HTTP), `presence` (who is subscribed), `left` (access lost, or the list is gone).
+ * Data and permissions stay on the HTTP API.
  *
  * client -> server: { type: 'subscribe' | 'unsubscribe', checklistId }
  * server -> client: { type: 'subscribed' | 'denied' | 'left', checklistId }
@@ -63,7 +63,7 @@ export function updateLiveProfile(userId: number, name: string | null, avatar: s
 /**
  * Tells everyone in a list's common run that it changed. `origin` is the id of the browser tab
  * that made the change, so it can skip refetching its own edit. Subscribers who no longer take
- * part in the common run (share revoked, mode switched, list deleted) are dropped.
+ * part in the common run (share revoked, left the run, list deleted) are dropped.
  */
 export function notifyList(listId: number, origin?: string) {
   let dropped = false

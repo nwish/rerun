@@ -35,10 +35,7 @@ export type UserBlastRadius = {
 }
 
 export type ChecklistItem = { id: number; text: string; checked: boolean; position: number }
-export type Access = 'owner' | 'edit' | 'view'
-export type SharePermission = 'view' | 'edit'
-/** shared: the recipient runs the list with their own checks. collaborative: they join the owner's one live run. */
-export type ShareMode = 'shared' | 'collaborative'
+export type Access = 'owner' | 'edit'
 /** Whose checks you see: the common run (owner and collaborators) or your own. */
 export type Scope = 'common' | 'personal'
 /** Identifies this browser tab so the server doesn't echo our own edits back over the live socket. */
@@ -84,12 +81,11 @@ export type Checklist = {
   items: ChecklistItem[]
 }
 /** A share the current user has granted, on one of their lists. */
-export type Share = Person & { id: number; permission: SharePermission; mode: ShareMode; checklistId: number }
+export type Share = Person & { id: number; checklistId: number }
 
 /** Where someone you've shared a list with stands in the list's current live run. */
 export type LiveState = 'none' | 'invited' | 'requested' | 'joined'
-/** mode 'collaborative' people are always in the run; only 'shared' people can be invited into it. */
-export type LivePerson = Person & { mode: ShareMode; state: LiveState }
+export type LivePerson = Person & { state: LiveState }
 
 export type HistoryRun = {
   id: number
@@ -190,8 +186,8 @@ export const api = {
     request<{ people: LivePerson[] }>(`/api/checklists/${id}/live/respond`, json('POST', `/api/checklists/${id}/live/respond`, { email, accept })),
 
   shares: () => request<{ shares: Share[] }>('/api/shares'),
-  putShare: (email: string, permission: SharePermission, mode: ShareMode, checklistId: number) =>
-    request<Share>('/api/shares', json('PUT', '/api/shares', { email, permission, mode, checklistId })),
+  putShare: (email: string, checklistId: number) =>
+    request<Share>('/api/shares', json('PUT', '/api/shares', { email, checklistId })),
   deleteShare: (id: number) => request<{ ok: boolean }>(`/api/shares/${id}`, { method: 'DELETE' }),
 
   history: (checklistId: number | null) => request<History>(checklistId === null ? '/api/history' : `/api/history?checklistId=${checklistId}`)

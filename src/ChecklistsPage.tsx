@@ -194,7 +194,6 @@ function ChecklistCard({
   onChanged: () => void
 }) {
   const isOwner = summary.access === 'owner'
-  const canEdit = summary.access !== 'view'
   const [checklist, setChecklist] = useState<Checklist | null>(null)
   const [titleDraft, setTitleDraft] = useState(summary.title)
   const [newItem, setNewItem] = useState('')
@@ -424,7 +423,7 @@ function ChecklistCard({
             </>
           ) : (
             <p className="muted share-access-note">
-              Shared by {ownerLabel(summary)} — {canEdit ? 'you can edit items' : 'you can run it but not change its items'};{' '}
+              Shared by {ownerLabel(summary)} — you can edit items;{' '}
               {summary.scope === 'common' ? `you work in ${ownerLabel(summary)}'s live run together.` : 'you run it on your own, with your own checks and history.'}
             </p>
           )}
@@ -440,7 +439,7 @@ function ChecklistCard({
                   className={`checklist-item-row${draggingId === item.id ? ' dragging' : ''}`}
                 >
                   <div className="checklist-item-card">
-                    {canEdit && checklist.items.length > 1 && (
+                    {checklist.items.length > 1 && (
                       <button
                         type="button"
                         className="ghost checklist-item-grip"
@@ -456,15 +455,12 @@ function ChecklistCard({
                       onChange={(e) => setItemTextLocal(item.id, e.target.value)}
                       onBlur={() => saveItemText(item.id)}
                       maxLength={500}
-                      readOnly={!canEdit}
                     />
-                    {canEdit && (
-                      <div className="checklist-item-actions">
-                        <button type="button" className="ghost" onClick={() => removeItem(item.id)} aria-label="Delete item">
-                          {icons.trash}
-                        </button>
-                      </div>
-                    )}
+                    <div className="checklist-item-actions">
+                      <button type="button" className="ghost" onClick={() => removeItem(item.id)} aria-label="Delete item">
+                        {icons.trash}
+                      </button>
+                    </div>
                   </div>
                 </li>
               ))}
@@ -472,12 +468,10 @@ function ChecklistCard({
             </ul>
           )}
 
-          {canEdit && (
-            <form onSubmit={addItem} className="checklist-add-item-form">
-              <input value={newItem} onChange={(e) => setNewItem(e.target.value)} placeholder="Add an item…" maxLength={500} />
-              <button type="submit">Add item</button>
-            </form>
-          )}
+          <form onSubmit={addItem} className="checklist-add-item-form">
+            <input value={newItem} onChange={(e) => setNewItem(e.target.value)} placeholder="Add an item…" maxLength={500} />
+            <button type="submit">Add item</button>
+          </form>
 
           <div className="checklist-card-actions">
             <button type="button" className="ghost" onClick={duplicateChecklist}>
