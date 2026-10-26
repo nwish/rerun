@@ -1,5 +1,3 @@
-<div align="center">
-
 # Rerun
 
 Life repeats. Your checklists should too. 🔁<br>
@@ -14,8 +12,6 @@ Create it once. Check it off. Reset. Rerun.
 [![License](https://img.shields.io/github/license/nwish/rerun?style=flat-square)](https://github.com/nwish/rerun/blob/main/LICENSE)
 [![Stars](https://img.shields.io/github/stars/nwish/rerun?style=flat-square)](https://github.com/nwish/rerun/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/nwish/rerun?style=flat-square)](https://github.com/nwish/rerun/commits/main)
-
-</div>
 
 Rerun turns repeatable activities into checklists. Build a list for each thing you do more than once — kayaking, road trips, campouts, yard work — then keep it exactly the way you want it.
 
@@ -44,8 +40,6 @@ A few things worth checking twice (or a hundred times).
 | Frontend  | React 18, Vite, TypeScript                                   |
 | Database  | SQLite via `better-sqlite3` (WAL mode)                       |
 | Auth      | PBKDF2 password hashing, server-side sessions in SQLite      |
-
-Compliments of Claude, ChatGPT/Codex, Qwen3.8-Flash-Next, and a touch.. and I do mean like a super, duper tiny touch, of my own development experience. 
 
 ![Node.js](https://img.shields.io/badge/Node.js-24-339933?style=flat-square&logo=nodedotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-149ECA?style=flat-square&logo=react&logoColor=white)
