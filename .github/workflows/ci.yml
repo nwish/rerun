@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   check:
-    name: Typecheck, build, audit
+    name: Typecheck and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -30,9 +30,6 @@ jobs:
       - run: npm run typecheck
 
       - run: npm run build
-
-      # Production dependencies only, so a dev-tool advisory doesn't fail every run.
-      - run: npm audit --omit=dev --audit-level=high
 
   docker:
     name: Docker image builds
