@@ -32,7 +32,7 @@ jobs:
 
       - name: Metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/rerun
           # v1.2.3 -> 1.2.3, 1.2, 1, latest. Pre-releases (v1.2.3-rc.1) get only their exact
