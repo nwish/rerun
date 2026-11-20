@@ -19,27 +19,27 @@
     "@fontsource/space-grotesk": "^5.3.0",
     "better-sqlite3": "^12.2.0",
     "express": "^4.19.2",
-    "express-rate-limit": "^8.7.0",
-    "lucide-react": "^1.47.0",
-    "nodemailer": "^10.0.9",
+    "express-rate-limit": "^8.7.4",
+    "lucide-react": "^1.73.0",
+    "nodemailer": "^10.6.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tsx": "^4.19.2",
-    "ws": "^8.22.0"
+    "tsx": "^4.23.15",
+    "ws": "^8.23.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
     "@types/express": "^4.17.21",
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.19.2",
     "@types/nodemailer": "^8.0.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^5.0.0",
-    "concurrently": "^9.2.0",
+    "concurrently": "^9.2.5",
     "cross-env": "^7.0.3",
     "typescript": "^5.9.2",
-    "vite": "^7.3.7"
+    "vite": "^7.3.8"
   },
   "overrides": {
     "shell-quote": "^1.12.0"
