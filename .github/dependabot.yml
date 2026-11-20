@@ -24,3 +24,14 @@ updates:
     groups:
       actions:
         update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: weekly
+      day: friday
+      time: "05:00"
+      timezone: America/Los_Angeles
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
